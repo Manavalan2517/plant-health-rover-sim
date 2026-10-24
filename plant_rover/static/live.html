@@ -253,7 +253,7 @@ async function loadManualHistory(){
       $('manualHistoryBody').innerHTML = '<tr><td colspan="7"><div class="blank"><strong>No manual inspections performed yet</strong><p>Upload a photograph above to generate your first assessment.</p></div></td></tr>';
       return;
     }
-    $('manualHistoryBody').innerHTML = rows.map(r=>`<tr><td><strong>${esc(r.inspection_id)}</strong></td><td>${esc(fmtTime(r.timestamp))}</td><td>${esc(r.filename)}</td><td><strong>${esc(r.predicted_condition||'—')}</strong></td><td>${r.confidence_pct?r.confidence_pct+'%':'—'}</td><td>${statusPill(r.status)}</td><td>${r.quality_checks&&r.quality_checks.sharpness_score!=null?r.quality_checks.sharpness_score:'—'}</td></tr>`).join('');
+    $('manualHistoryBody').innerHTML = rows.map(r=>`<tr><td><strong>${esc(r.inspection_id)}</strong></td><td>${esc(fmtTime(r.timestamp))}</td><td>${esc(r.filename)}</td><td><strong>${esc(r.predicted_condition||'—')}</strong></td><td>${r.confidence_pct!=null?r.confidence_pct+'%':'N/A'}</td><td>${statusPill(r.status)}</td><td>${r.quality_checks&&r.quality_checks.sharpness_score!=null?r.quality_checks.sharpness_score:'—'}</td></tr>`).join('');
   }catch(e){}
 }
 
@@ -407,8 +407,8 @@ function renderInspectionResult(res){
           <h3 style="font-size:18px;margin:3px 0 0;color:${titleColor}">${esc(res.predicted_condition||'Undetermined')}</h3>
         </div>
         <div style="text-align:right">
-          <span style="font-size:11px;color:var(--muted)">Raw model score (uncalibrated)</span>
-          <div style="font-size:${isUncertain ? '13px' : '20px'};font-weight:800;color:${isUnsupported ? 'var(--cyan)' : confColor};line-height:1.2">
+          <span style="font-size:11px;color:var(--muted)">${res.confidence_pct != null ? 'Raw model score (uncalibrated)' : 'Confidence'}</span>
+          <div style="font-size:${isUncertain ? '13px' : '20px'};font-weight:800;color:${isUnsupported ? 'var(--cyan)' : (isUncertain ? 'var(--amber)' : confColor)};line-height:1.2">
             ${isUnsupported ? 'N/A' : (isUncertain ? 'Unavailable (uncertain assessment)' : (res.confidence_pct != null ? `${res.confidence_pct}%` : '—'))}
           </div>
         </div>
@@ -418,7 +418,7 @@ function renderInspectionResult(res){
         <small style="font-size:10px;color:var(--muted)">Raw model score (uncalibrated softmax) · Not a calibrated probability or diagnostic accuracy.</small>
       ` : `
         <div style="margin-top:6px;padding:6px 10px;background:#101a26;border-radius:6px;border:1px solid #1c2e42">
-          <small style="font-size:10px;color:#a0b8d0">${isUnsupported ? 'Confidence is N/A: condition is outside the model\'s supported domain.' : 'Confidence is unavailable: visual evidence is inconclusive or overlapping across lookalike conditions.'}</small>
+          <small style="font-size:10px;color:#a0b8d0">${isUnsupported ? 'Confidence is N/A: condition is outside the model\'s supported domain.' : 'Confidence is N/A: visual evidence is inconclusive or overlapping across lookalike conditions.'}</small>
         </div>
       `}
     </div>

@@ -196,11 +196,30 @@ class ClassifierInferenceTests(unittest.TestCase):
 
             # 4. Prove that it cannot silently receive a verified/confirmed legal diagnosis label
             self.assertTrue(
-                result.predicted_condition.startswith("Suspected") or result.predicted_condition.startswith("Uncertain"),
-                "Prediction must be qualified as suspected/uncertain, never a confirmed legal diagnosis."
+                result.predicted_condition.startswith("Suspected")
+                or result.predicted_condition.startswith("Uncertain")
+                or result.predicted_condition.startswith("Unsupported Condition"),
+                "Prediction must be qualified as suspected/uncertain/unsupported, never a confirmed legal diagnosis."
             )
+            self.assertEqual(result.status, "UNSUPPORTED_CONDITION")
+            self.assertIsNone(result.confidence_pct)
+            self.assertEqual(result.condition_code, "unsupported_nutrient_disorder")
+            self.assertIn("Magnesium Deficiency", result.predicted_condition)
             # 5. Check limitations explicitly document visual assay constraints
             self.assertTrue(any("nutrient" in lim.lower() for lim in result.limitations))
+
+    def test_leafminer_damaged_image_rejected_as_unsupported_condition(self):
+        """Regression test: Proves leafminer-damaged image is rejected as unsupported condition rather than classified as Late Blight."""
+        img_path = Path("/home/mano/Documents/Anveshion/web_test_images/leaf_miner_pest.jpg")
+        if img_path.exists():
+            data = img_path.read_bytes()
+            result = self.classifier.inspect_image(data, "leaf_miner_pest.jpg")
+            self.assertEqual(result.status, "UNSUPPORTED_CONDITION")
+            self.assertIsNone(result.confidence_pct)
+            self.assertEqual(result.condition_code, "unsupported_leafminer_damage")
+            self.assertIn("Leafminer", result.predicted_condition)
+            self.assertNotIn("Tomato_Late_blight", result.condition_code)
+            self.assertIn("Do NOT apply Late Blight fungicides", result.recommended_action)
 
     def test_clear_known_sample_is_assessed(self):
         sample_path = Path("/home/mano/Documents/Anveshion/plant-health-rover-sim/plant_rover/static/samples/sample_yellow_leaf_curl.jpg")
@@ -651,11 +670,28 @@ class Section7AuditorRegressionTests(unittest.TestCase):
             # Inference runs actual model outputs without filename overrides
             result = self.classifier.inspect_image(data, "pub0006537_76781.webp")
 
-            # Model closed-set prediction is Septoria leaf spot
-            # Crucially: In evaluation, this MUST NOT be counted as a correct prediction
+            # Model closed-set prediction would be Septoria, but rejection pipeline correctly rejects it as unsupported
+            self.assertEqual(result.status, "UNSUPPORTED_CONDITION")
+            self.assertIsNone(result.confidence_pct)
+            self.assertEqual(result.condition_code, "unsupported_nutrient_disorder")
+            self.assertIn("Magnesium Deficiency", result.predicted_condition)
             is_correct = (result.condition_code == "Tomato_Magnesium_Deficiency")
-            self.assertFalse(is_correct, "Magnesium deficiency must not be scored as a correct classification.")
-            self.assertNotEqual(result.condition_code, "Tomato_Magnesium_Deficiency")
+            self.assertFalse(is_correct, "Magnesium deficiency must not be scored as a supported classification.")
+            self.assertFalse(result.sensor_data_available)
+
+    def test_01b_leafminer_pest_image_rejected_as_unsupported_condition(self):
+        """1b. Leafminer-damaged image is rejected as unsupported condition rather than classified as Late Blight."""
+        img_path = Path("/home/mano/Documents/Anveshion/web_test_images/leaf_miner_pest.jpg")
+        if img_path.exists():
+            data = img_path.read_bytes()
+            result = self.classifier.inspect_image(data, "leaf_miner_pest.jpg")
+            self.assertEqual(result.status, "UNSUPPORTED_CONDITION")
+            self.assertIsNone(result.confidence_pct)
+            self.assertEqual(result.condition_code, "unsupported_leafminer_damage")
+            self.assertIn("Leafminer", result.predicted_condition)
+            self.assertNotIn("Tomato_Late_blight", result.condition_code)
+            self.assertIn("Do NOT apply Late Blight fungicides", result.recommended_action)
+            self.assertFalse(result.sensor_data_available)
 
     def test_02_unsupported_conditions_cannot_silently_receive_verified_diagnosis_label(self):
         """2. Unsupported conditions cannot silently receive a verified-diagnosis label."""
@@ -671,7 +707,9 @@ class Section7AuditorRegressionTests(unittest.TestCase):
         dummy = create_test_image(224, 224)
         res = self.classifier.inspect_image(dummy, "test.jpg")
         self.assertTrue(
-            res.predicted_condition.startswith("Suspected") or res.predicted_condition.startswith("Uncertain"),
+            res.predicted_condition.startswith("Suspected")
+            or res.predicted_condition.startswith("Uncertain")
+            or res.predicted_condition.startswith("Unsupported Condition"),
             "System must never issue unverified or absolute diagnoses."
         )
 

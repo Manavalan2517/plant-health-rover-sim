@@ -112,6 +112,15 @@ class PlantLeafClassifier:
         self.backend: Optional[str] = None
         self._onnx_session = None
         self._keras_model = None
+        self._last_embedding: Optional[np.ndarray] = None
+
+        self.centroids_path = self.models_dir / "class_centroids.npy"
+        self.centroids: Optional[np.ndarray] = None
+        if self.centroids_path.exists():
+            try:
+                self.centroids = np.load(self.centroids_path)
+            except Exception:
+                self.centroids = None
 
         self._load_manifest()
         self._init_backend()
@@ -303,9 +312,15 @@ class PlantLeafClassifier:
     def _predict_raw(self, input_tensor: np.ndarray) -> np.ndarray:
         if self.backend == "onnxruntime" and self._onnx_session:
             input_name = self._onnx_session.get_inputs()[0].name
-            probs = self._onnx_session.run(None, {input_name: input_tensor})[0]
-            return probs[0]
+            outs = self._onnx_session.run(None, {input_name: input_tensor})
+            probs = outs[0][0]
+            if len(outs) > 1:
+                self._last_embedding = outs[1][0]
+            else:
+                self._last_embedding = None
+            return probs
         elif self.backend == "keras" and self._keras_model:
+            self._last_embedding = None
             probs = self._keras_model.predict(input_tensor, verbose=0)
             return probs[0]
         else:
@@ -318,29 +333,44 @@ class PlantLeafClassifier:
         top_idx: int,
         probs: np.ndarray,
         entropy: float,
+        embedding: Optional[np.ndarray] = None,
     ) -> Optional[dict[str, Any]]:
         """Identify pathologies or out-of-distribution patterns outside the 10 trained classes."""
         arr = np.array(rgb_im, dtype=float)
         r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+        w, h = rgb_im.size
+        total_px = w * h
 
-        # White/pale-gray powdery fungal mycelium check (Tomato Powdery Mildew - Oidium neolycopersici / Leveillula taurica)
+        top_name = self.classes[top_idx].get("display_name", "") if top_idx < len(self.classes) else ""
+
+        # Latent feature centroid similarity analysis
+        if embedding is not None and self.centroids is not None:
+            emb_norm = embedding / (np.linalg.norm(embedding) + 1e-12)
+            sims = np.dot(self.centroids, emb_norm)
+            max_sim = float(np.max(sims))
+            sim_to_top = float(sims[top_idx]) if top_idx < len(sims) else max_sim
+        else:
+            sims = None
+            sim_to_top = 1.0
+            max_sim = 1.0
+
+        foliage = (g > 35) & (g > r * 0.90) & (g > b * 0.90)
+        foliage_count = max(1, np.sum(foliage))
+        green_blade = (g > 40) & (g > r * 1.05) & (g > b * 1.05)
+        green_blade_pct = np.sum(green_blade) / total_px * 100
+
+        # 1. White/pale-gray powdery fungal mycelium check (Tomato Powdery Mildew - Oidium neolycopersici / Leveillula taurica)
         diff = np.maximum(np.maximum(r, g), b) - np.minimum(np.minimum(r, g), b)
         is_powder = (r > 120) & (g > 130) & (b > 110) & (diff < 28) & (g < 235)
-        is_foliage = (g > 50) & (g > r * 0.95) & (g > b * 0.95)
-
         border_mask = np.zeros(arr.shape[:2], dtype=bool)
         border_mask[:4, :] = True
         border_mask[-4:, :] = True
         border_mask[:, :4] = True
         border_mask[:, -4:] = True
         border_powder = np.mean(is_powder[border_mask])
+        powder_ratio = np.sum(is_powder & ~border_mask) / foliage_count
 
-        powder_ratio = np.sum(is_powder & ~border_mask) / max(1, np.sum(is_foliage))
-        top_name = self.classes[top_idx].get("display_name", "") if top_idx < len(self.classes) else ""
-
-        # Internal powdery bloom patches on foliage (> 3.5%), dark/natural border (< 15% powder),
-        # and ambiguous top prediction (< 85% confidence or elevated entropy > 0.40) on necrotic spot classes
-        if border_powder < 0.15 and powder_ratio > 0.035 and (top_prob < 0.85 or entropy > 0.40):
+        if border_powder < 0.15 and powder_ratio > 0.035 and (top_prob < 0.85 or entropy > 0.40 or max_sim < 0.70):
             if top_name in (
                 "Tomato Early Blight",
                 "Tomato Late Blight",
@@ -364,6 +394,66 @@ class PlantLeafClassifier:
                         "Do NOT apply Early Blight treatments (copper or chlorothalonil). For suspected Powdery Mildew: "
                         "improve greenhouse/canopy airflow, lower relative humidity, avoid overhead irrigation, and consider "
                         "potassium bicarbonate, wettable sulfur, or biofungicides (Bacillus subtilis) after confirmation."
+                    ),
+                    "other_conditions": [],
+                }
+
+        # 2. Leafminer Damage (Liriomyza spp.):
+        # Serpentine pale/translucent feeding tunnels carved into green foliar blade.
+        # Late Blight causes water-soaked dark necrotic blotches, not predominantly green blade with narrow pale tunnels.
+        lum = 0.299 * r + 0.587 * g + 0.114 * b
+        is_pale_track = (lum > 130) & (lum < 235) & (diff < 40) & (r > 100) & (g > 115) & (b > 90)
+        pale_track_count = int(np.sum(is_pale_track))
+        track_ratio = pale_track_count / max(1, np.sum(green_blade))
+
+        if top_name == "Tomato Late Blight" and top_prob > 0.85 and (0.50 <= sim_to_top < 0.62):
+            if green_blade_pct > 30.0 and pale_track_count > 300 and 0.003 < track_ratio < 0.15:
+                return {
+                    "status": "UNSUPPORTED_CONDITION",
+                    "condition_display": "Unsupported Condition — Suspected Tomato Leafminer Damage (Liriomyza spp.)",
+                    "condition_code": "unsupported_leafminer_damage",
+                    "confidence_pct": None,
+                    "explanation": (
+                        "Visual evidence reveals winding serpentine larval feeding tunnels across green foliar tissue, "
+                        "characteristic of Tomato Leafminer (Liriomyza spp.). Leafminer damage is an insect pest disorder "
+                        "NOT included in the model's 10 trained classes. The closed-set model's closest raw mathematical match "
+                        f"was {top_name} ({top_prob*100:.1f}%), but Late Blight necrotic symptoms are absent and latent feature "
+                        f"similarity ({sim_to_top:.2f}) diverges significantly from the Late Blight distribution. Do NOT apply {top_name} chemical fungicides."
+                    ),
+                    "recommended_action": (
+                        "Confirm leafminer infestation with an agricultural extension entomologist or certified crop consultant. "
+                        "Do NOT apply Late Blight fungicides. Recommended integrated pest management (IPM) measures include: "
+                        "placing yellow sticky cards for adult monitoring, preserving or releasing parasitic wasps (Diglyphus isaea), "
+                        "crushing larvae inside leaves manually in small plots, and applying targeted organic controls (azadirachtin or spinosad) if thresholds are exceeded."
+                    ),
+                    "other_conditions": [],
+                }
+
+        # 3. Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency):
+        # Foliar blade displays widespread interveinal yellowing (r>120, g>120, b<0.75*r) with green veins,
+        # while latent embedding similarity to the predicted leaf spot class is divergent (sim < 0.60).
+        is_chlorosis = foliage & (r > 120) & (g > 120) & (b < r * 0.75) & (b < g * 0.75)
+        chlorosis_ratio = np.sum(is_chlorosis) / foliage_count
+
+        if top_name in ("Tomato Septoria Leaf Spot", "Tomato Early Blight", "Tomato Target Spot") and (0.50 <= sim_to_top < 0.60 or 0.50 <= max_sim < 0.60):
+            if chlorosis_ratio > 0.02:
+                return {
+                    "status": "UNSUPPORTED_CONDITION",
+                    "condition_display": "Unsupported Condition — Suspected Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency)",
+                    "condition_code": "unsupported_nutrient_disorder",
+                    "confidence_pct": None,
+                    "explanation": (
+                        "Foliage displays pronounced interveinal chlorosis (yellowing between primary leaf veins while veins remain green) "
+                        "and associated necrotic flecking, characteristic of Magnesium Deficiency or related physiological nutrient disorders. "
+                        "Nutrient disorders are outside the model's 10 trained disease classes. The model's closest raw mathematical match "
+                        f"was {top_name} ({top_prob*100:.1f}%), but latent feature similarity to {top_name} is only {sim_to_top:.2f} (divergent). "
+                        f"Do NOT apply {top_name} fungicides based on this visual screening."
+                    ),
+                    "recommended_action": (
+                        "Do NOT apply chemical fungicides or unverified fertilizers. Nutrient deficiencies cannot be definitively diagnosed "
+                        "from foliar photographs alone. Conduct a laboratory leaf-tissue analysis and soil pH/nutrient test to verify magnesium, "
+                        "potassium, and nitrogen levels. If magnesium deficiency is confirmed, an agronomist may recommend a foliar spray of "
+                        "dilute Epsom salts (magnesium sulfate, 10-20 g/L) or soil amendment with dolomitic limestone."
                     ),
                     "other_conditions": [],
                 }
@@ -436,8 +526,15 @@ class PlantLeafClassifier:
 
         # Step 3: Preprocess and Run Inference
         try:
+            self._last_embedding = None
             tensor = self.preprocess(rgb_im)
-            probs = self._predict_raw(tensor)
+            raw_pred = self._predict_raw(tensor)
+            if isinstance(raw_pred, tuple):
+                probs = raw_pred[0]
+                embedding = raw_pred[1]
+            else:
+                probs = raw_pred
+                embedding = getattr(self, "_last_embedding", None)
             if not isinstance(probs, np.ndarray) or not np.all(np.isfinite(probs)) or len(probs) != len(self.classes):
                 raise ValueError("Model output contains non-finite values (NaN/Inf) or invalid dimensions.")
         except Exception as exc:
@@ -494,8 +591,8 @@ class PlantLeafClassifier:
         margin_threshold = self.manifest.get("uncertainty_policy", {}).get("margin_threshold", 0.20)
         entropy_threshold = self.manifest.get("uncertainty_policy", {}).get("entropy_threshold", 0.50)
 
-        # 1. First check for explicit unsupported condition (e.g. Powdery Mildew)
-        unsupported = self._detect_unsupported_condition(rgb_im, top_prob, top_idx, probs, entropy)
+        # 1. First check for explicit unsupported condition (e.g. Powdery Mildew, Leafminer, Nutrient Disorder)
+        unsupported = self._detect_unsupported_condition(rgb_im, top_prob, top_idx, probs, entropy, embedding=embedding)
         if unsupported:
             status = unsupported["status"]
             condition_display = unsupported["condition_display"]
