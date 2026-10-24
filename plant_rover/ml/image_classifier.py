@@ -402,7 +402,7 @@ class PlantLeafClassifier:
                 status="IMAGE_REJECTED",
                 predicted_condition="Image Rejected",
                 condition_code="image_rejected",
-                confidence_pct=0.0,
+                confidence_pct=None,
                 other_possible_conditions=[],
                 quality_checks=quality_dict,
                 sensor_data_available=False,
@@ -423,7 +423,7 @@ class PlantLeafClassifier:
                 status="MODEL_UNAVAILABLE",
                 predicted_condition="Model Not Ready",
                 condition_code="model_unavailable",
-                confidence_pct=0.0,
+                confidence_pct=None,
                 other_possible_conditions=[],
                 quality_checks=quality_dict,
                 sensor_data_available=False,
@@ -438,6 +438,8 @@ class PlantLeafClassifier:
         try:
             tensor = self.preprocess(rgb_im)
             probs = self._predict_raw(tensor)
+            if not isinstance(probs, np.ndarray) or not np.all(np.isfinite(probs)) or len(probs) != len(self.classes):
+                raise ValueError("Model output contains non-finite values (NaN/Inf) or invalid dimensions.")
         except Exception as exc:
             return ManualInspectionResult(
                 inspection_id=insp_id,
@@ -447,7 +449,7 @@ class PlantLeafClassifier:
                 status="MODEL_UNAVAILABLE",
                 predicted_condition="Inference Error",
                 condition_code="inference_error",
-                confidence_pct=0.0,
+                confidence_pct=None,
                 other_possible_conditions=[],
                 quality_checks=quality_dict,
                 sensor_data_available=False,
