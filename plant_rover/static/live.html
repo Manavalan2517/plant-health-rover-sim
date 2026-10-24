@@ -149,7 +149,7 @@
       <!-- RESULTS SECTION -->
       <div class="stack">
         <section class="panel" id="resultPanel">
-          <div class="head"><div><h2>Inspection assessment</h2><p>Model prediction, confidence calibration, and uncertainty</p></div><span class="state" id="assessmentStatusBadge">AWAITING IMAGE</span></div>
+          <div class="head"><div><h2>Inspection assessment</h2><p>Model prediction, uncertainty gating, and uncalibrated visual score</p></div><span class="state" id="assessmentStatusBadge">AWAITING IMAGE</span></div>
           <div class="body" id="resultBody">
             <div class="blank"><div class="icon">🔍</div><strong>No image analyzed yet</strong><p>Select a tomato leaf photo on the left and click "Analyze leaf condition" to inspect.</p></div>
           </div>
@@ -171,7 +171,7 @@
       <div class="head"><div><h2>Recent manual inspections (current session)</h2><p>In-memory audit log of leaf photographs evaluated during this browser session.</p></div><span class="count" id="manualHistoryCount">0 inspections</span></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Inspection ID</th><th>Timestamp (UTC)</th><th>File</th><th>Predicted condition</th><th>Confidence</th><th>Status</th><th>Sharpness</th></tr></thead>
+          <thead><tr><th>Inspection ID</th><th>Timestamp (UTC)</th><th>File</th><th>Predicted condition</th><th>Raw score (uncalibrated)</th><th>Status</th><th>Sharpness</th></tr></thead>
           <tbody id="manualHistoryBody">
             <tr><td colspan="7"><div class="blank"><strong>No manual inspections performed yet</strong><p>Upload a photograph above to generate your first assessment.</p></div></td></tr>
           </tbody>
@@ -281,6 +281,10 @@ function handleFileSelect(file){
   selectedFile = file;
   $('previewFileName').textContent = file.name;
   $('previewFileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  $('qualityCard').style.display = 'none';
+  $('resultBody').innerHTML = '<div class="blank"><div class="icon">🔍</div><strong>Ready to analyze</strong><p>Click "Analyze leaf condition" to evaluate this photograph.</p></div>';
+  $('assessmentStatusBadge').textContent = 'IMAGE SELECTED';
+  $('assessmentStatusBadge').className = 'state info';
   const reader = new FileReader();
   reader.onload = e => {
     $('previewImg').src = e.target.result;
@@ -327,6 +331,9 @@ $('analyzeBtn').addEventListener('click', async ()=>{
   if(!selectedFile) return;
   $('analyzeBtn').disabled = true;
   $('analyzeBtn').textContent = '⏳ Evaluating...';
+  $('resultBody').innerHTML = '<div class="blank"><div class="icon">⏳</div><strong>Evaluating leaf photograph...</strong><p>Performing quality checks and neural network inference.</p></div>';
+  $('assessmentStatusBadge').textContent = 'EVALUATING';
+  $('assessmentStatusBadge').className = 'state';
 
   try{
     const fd = new FormData();
@@ -400,7 +407,7 @@ function renderInspectionResult(res){
           <h3 style="font-size:18px;margin:3px 0 0;color:${titleColor}">${esc(res.predicted_condition||'Undetermined')}</h3>
         </div>
         <div style="text-align:right">
-          <span style="font-size:11px;color:var(--muted)">Model Confidence</span>
+          <span style="font-size:11px;color:var(--muted)">Raw model score (uncalibrated)</span>
           <div style="font-size:${isUncertain ? '13px' : '20px'};font-weight:800;color:${isUnsupported ? 'var(--cyan)' : confColor};line-height:1.2">
             ${isUnsupported ? 'N/A' : (isUncertain ? 'Unavailable (uncertain assessment)' : (res.confidence_pct != null ? `${res.confidence_pct}%` : '—'))}
           </div>
@@ -408,7 +415,7 @@ function renderInspectionResult(res){
       </div>
       ${isAssessed && res.confidence_pct != null ? `
         <div class="progress-bar"><div class="progress-fill" style="width:${res.confidence_pct}%;background:${confColor}"></div></div>
-        <small style="font-size:10px;color:var(--muted)">Softmax prediction score · Not an absolute probability or laboratory diagnosis.</small>
+        <small style="font-size:10px;color:var(--muted)">Raw model score (uncalibrated softmax) · Not a calibrated probability or diagnostic accuracy.</small>
       ` : `
         <div style="margin-top:6px;padding:6px 10px;background:#101a26;border-radius:6px;border:1px solid #1c2e42">
           <small style="font-size:10px;color:#a0b8d0">${isUnsupported ? 'Confidence is N/A: condition is outside the model\'s supported domain.' : 'Confidence is unavailable: visual evidence is inconclusive or overlapping across lookalike conditions.'}</small>

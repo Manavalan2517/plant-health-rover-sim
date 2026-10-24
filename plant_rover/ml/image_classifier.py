@@ -539,6 +539,7 @@ class PlantLeafClassifier:
             sensor_note="Live sensor data is unavailable. No physical hardware is connected; this assessment is an isolated PC-side image analysis.",
             recommended_action=rec_action,
             limitations=[
+                "Model outputs raw, uncalibrated softmax scores rather than calibrated diagnostic probabilities.",
                 "Model was trained on laboratory-condition tomato leaf photographs (PlantVillage style).",
                 "Visual analysis cannot assess root rot, deep vascular wilt, or soil nutrient imbalances without laboratory assays.",
                 "Predicted conditions represent suspected visual findings, not confirmed legal diagnoses.",
