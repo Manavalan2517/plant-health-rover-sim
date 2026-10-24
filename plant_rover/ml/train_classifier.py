@@ -82,7 +82,10 @@ def load_dataset_splits(
         raw_files = sorted([f for f in cdir.iterdir() if f.is_file() and f.stat().st_size > 0 and f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")])
 
         if samples_per_class > 0 and len(raw_files) > samples_per_class:
-            # Group into contiguous blocks of 10 to avoid separating closely related augmented variants
+            # Group into contiguous blocks of 10.
+            # NOTE (Auditor Finding): Lexicographical sorting ('img_1.jpg', 'img_10.jpg', ...)
+            # combined with stripped upstream metadata means chunking cannot guarantee specimen isolation.
+            # This partition provides a preliminary benchmark on augmented data, not a proven specimen-independent test.
             chunk_size = 10
             chunks = [raw_files[i : i + chunk_size] for i in range(0, len(raw_files), chunk_size)]
             rng.shuffle(chunks)
@@ -90,7 +93,7 @@ def load_dataset_splits(
         else:
             selected_files = list(raw_files)
 
-        # Split at chunk level to prevent data leakage between augmented variations
+        # Split at chunk level for preliminary train/val/test assignment
         chunk_size = 10
         chunks = [selected_files[i : i + chunk_size] for i in range(0, len(selected_files), chunk_size)]
         rng.shuffle(chunks)

@@ -38,11 +38,18 @@ An automated audit across every file in `augmented_dataset.zip` established the 
    - SHA-256 hash collision check across all 30,609 images detected **14 exact duplicates** within classes (intra-class duplicates) and **0 cross-class duplicates**.
    - Intra-class duplicates occurred in classes where data augmentation applied neutral or identical settings.
 
-3. **Data Leakage in Augmented Datasets**:
+3. **Data Leakage and Specimen Independence in Augmented Datasets**:
    - The original PlantVillage tomato collection contained varying samples per class (e.g. 373 mosaic virus images vs 3,209 yellow leaf curl images).
    - In `augmented_dataset`, each class was upsampled using affine transformations, flips, rotations, zooming, and color jitter to balance class counts at ~3,000 images per class.
-   - Because file names were renamed sequentially (`img_1.jpg` through `img_N.jpg`), original plant identifiers were removed.
-   - **Mitigation for Training**: Images were partitioned in contiguous chunks of 10 images to ensure that near-identical augmented variants of the same source leaf remain within the same partition (train, validation, or test) rather than leaking across evaluation sets.
+   - Because file names were renamed sequentially (`img_1.jpg` through `img_N.jpg`), original plant specimen identifiers and EXIF tags were discarded during upstream preprocessing.
+   - **Auditor Evaluation of Partitioning**:
+     * In `train_classifier.py`, image files were sorted lexicographically before grouping into contiguous chunks of 10.
+     * Standard string sorting orders files as `img_1.jpg`, `img_10.jpg`, `img_100.jpg`, `img_1000.jpg` rather than natural numeric order (`img_1.jpg`, `img_2.jpg`, ...). Even if sequential numbers originally mapped to shared source specimens, lexicographical chunking scrambles that sequence.
+     * More critically, because no source-image metadata exists in `augmented_dataset`, there is no evidence that adjacent files share parents or that separated files do not.
+     * **Auditor Finding**: The current partition does **NOT** genuinely prevent augmented variants of the same physical leaf from crossing train, validation, and test splits.
+     * **Evaluation Scope**: The reported test accuracy (83.33%) and macro F1 (83.34%) must therefore be treated as preliminary benchmark metrics on the existing synthetic partition, representing an upper-bound performance under potential intra-specimen correlation.
+     * **Metadata Recovery**: Identifiable source-image metadata cannot be recovered from `augmented_dataset` alone because EXIF and original filenames were permanently stripped upstream.
+     * **Independent Evaluation Protocol**: Rigorous validation of true out-of-distribution and real-world diagnostic performance requires an independent evaluation benchmark using external, botanically confirmed leaf photographs (such as university agricultural extension services, USDA ARS, EPPO, and fresh field captures with varied soil, weed, and lighting backgrounds).
 
 ---
 
@@ -50,9 +57,11 @@ An automated audit across every file in `augmented_dataset.zip` established the 
 
 ### What this dataset CAN establish:
 - Ability to distinguish characteristic visual symptoms (spot shapes, necrotic lesions, yellowing margins, mosaic patterns, mold structures) under standardized lighting against solid/neutral backgrounds.
-- High discriminative ability between virus classes (`Tomato Yellow Leaf Curl Virus` achieves 0.98 F1) and healthy tissue (0.93 F1).
+- High discriminative ability between virus classes (`Tomato Yellow Leaf Curl Virus` achieves 0.98 F1) and healthy tissue (0.93 F1) on the synthetic partition.
 
 ### What this dataset CANNOT establish:
-- **Field-condition robustness**: Laboratory leaf photographs feature uniform black/gray backgrounds. Real field rovers capture complex backgrounds (soil, weeds, mulch, shadows, neighboring leaves).
+- **Specimen-independent generalization**: Because specimen IDs were lost, zero-leakage independence between train and test sets cannot be guaranteed on `augmented_dataset`.
+- **Field-condition robustness**: Laboratory leaf photographs feature uniform black/gray backgrounds. Real field rovers capture complex backgrounds (soil, weeds, mulch, shadows, neighboring leaves) where visual accuracy drops.
 - **Vascular / root pathologies**: Visual leaf analysis cannot diagnose root rot, bacterial wilt, or subterranean nematodes before foliar chlorosis appears.
+- **Nutrient deficiencies and non-modeled pests**: Visual symptoms of magnesium deficiency (`pub0006537_76781.webp`) and leafminer tunneling (`leaf_miner_pest.jpg`) are outside the 10 trained classes and cause closed-set overconfidence failures unless detected as out-of-distribution.
 - **Microclimate context**: An image alone cannot measure whether atmospheric humidity is above 85% (promoting leaf mold) or if soil moisture is depleting (drought stress). This is why the rover's multi-modal hardware architecture remains essential when physical sensors are connected.
