@@ -221,6 +221,37 @@ class ClassifierInferenceTests(unittest.TestCase):
             self.assertNotIn("Tomato_Late_blight", result.condition_code)
             self.assertIn("Do NOT apply Late Blight fungicides", result.recommended_action)
 
+    def test_concentric_leaf_spot_image_not_misdiagnosed_as_magnesium_deficiency(self):
+        """Regression test: Concentric circular leaf spot lesions must not trigger unsupported magnesium deficiency."""
+        img_paths = [
+            Path("/home/mano/Documents/Anveshion/web_test_images/concentric_leaf_spot.jpg"),
+            Path("/home/mano/Downloads/e9d1e5c9-bcc8-4c16-838c-8b5b587393c0.jpeg"),
+        ]
+        target_path = next((p for p in img_paths if p.exists()), None)
+        if target_path:
+            data = target_path.read_bytes()
+            result = self.classifier.inspect_image(data, target_path.name)
+            # 1. Must NOT diagnose as Magnesium Deficiency or unsupported nutrient disorder
+            self.assertNotEqual(result.condition_code, "unsupported_nutrient_disorder")
+            self.assertNotIn("Magnesium Deficiency", result.predicted_condition)
+            self.assertNotIn("Nutrient Disorder", result.predicted_condition)
+
+            # 2. Must evaluate as UNCERTAIN or ASSESSED for a leaf spot / blight condition
+            self.assertIn(result.status, ("UNCERTAIN", "ASSESSED"))
+            self.assertIn("Tomato_Early_blight", result.condition_code)
+
+            # 3. Must strictly suppress nutrient-specific recommendations (no Epsom salts or dolomitic lime)
+            self.assertNotIn("Epsom", result.recommended_action)
+            self.assertNotIn("magnesium sulfate", result.recommended_action.lower())
+            self.assertNotIn("dolomitic", result.recommended_action.lower())
+
+            # 4. Must surface lookalike differential considerations (e.g. Target Spot)
+            lookalike_names = [c["condition"] for c in result.other_possible_conditions]
+            self.assertTrue(
+                any("Target Spot" in name or "Septoria" in name for name in lookalike_names),
+                "Uncertain leaf-spot assessment must include lookalike differential diagnosis candidates."
+            )
+
     def test_clear_known_sample_is_assessed(self):
         sample_path = Path("/home/mano/Documents/Anveshion/plant-health-rover-sim/plant_rover/static/samples/sample_yellow_leaf_curl.jpg")
         if sample_path.exists():
@@ -692,6 +723,22 @@ class Section7AuditorRegressionTests(unittest.TestCase):
             self.assertNotIn("Tomato_Late_blight", result.condition_code)
             self.assertIn("Do NOT apply Late Blight fungicides", result.recommended_action)
             self.assertFalse(result.sensor_data_available)
+
+    def test_01c_concentric_leaf_spot_not_misdiagnosed_as_magnesium_deficiency(self):
+        """1c. Concentric circular leaf spot lesions must not be misdiagnosed as magnesium deficiency."""
+        img_paths = [
+            Path("/home/mano/Documents/Anveshion/web_test_images/concentric_leaf_spot.jpg"),
+            Path("/home/mano/Downloads/e9d1e5c9-bcc8-4c16-838c-8b5b587393c0.jpeg"),
+        ]
+        target_path = next((p for p in img_paths if p.exists()), None)
+        if target_path:
+            data = target_path.read_bytes()
+            result = self.classifier.inspect_image(data, target_path.name)
+            self.assertNotEqual(result.condition_code, "unsupported_nutrient_disorder")
+            self.assertNotIn("Magnesium Deficiency", result.predicted_condition)
+            self.assertIn(result.status, ("UNCERTAIN", "ASSESSED"))
+            self.assertFalse(result.sensor_data_available)
+            self.assertNotIn("Epsom", result.recommended_action)
 
     def test_02_unsupported_conditions_cannot_silently_receive_verified_diagnosis_label(self):
         """2. Unsupported conditions cannot silently receive a verified-diagnosis label."""

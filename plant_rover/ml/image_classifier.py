@@ -430,33 +430,57 @@ class PlantLeafClassifier:
                 }
 
         # 3. Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency):
-        # Foliar blade displays widespread interveinal yellowing (r>120, g>120, b<0.75*r) with green veins,
-        # while latent embedding similarity to the predicted leaf spot class is divergent (sim < 0.60).
+        # Foliar blade displays diffuse interveinal yellowing with green veins and fine punctate flecks,
+        # without large circular or concentric target-like necrotic lesions.
+        # Avoid diagnosing magnesium deficiency solely from yellowing and brown lesions:
+        # Fungal leaf spot diseases (Early Blight, Target Spot) produce large concentric lesions with chlorotic halos.
+        # Magnesium deficiency produces diffuse interveinal yellowing with fine necrotic flecks (no large blight patches).
         is_chlorosis = foliage & (r > 120) & (g > 120) & (b < r * 0.75) & (b < g * 0.75)
         chlorosis_ratio = np.sum(is_chlorosis) / foliage_count
 
-        if top_name in ("Tomato Septoria Leaf Spot", "Tomato Early Blight", "Tomato Target Spot") and (0.50 <= sim_to_top < 0.60 or 0.50 <= max_sim < 0.60):
-            if chlorosis_ratio > 0.02:
-                return {
-                    "status": "UNSUPPORTED_CONDITION",
-                    "condition_display": "Unsupported Condition — Suspected Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency)",
-                    "condition_code": "unsupported_nutrient_disorder",
-                    "confidence_pct": None,
-                    "explanation": (
-                        "Foliage displays pronounced interveinal chlorosis (yellowing between primary leaf veins while veins remain green) "
-                        "and associated necrotic flecking, characteristic of Magnesium Deficiency or related physiological nutrient disorders. "
-                        "Nutrient disorders are outside the model's 10 trained disease classes. The model's closest raw mathematical match "
-                        f"was {top_name} ({top_prob*100:.1f}%), but latent feature similarity to {top_name} is only {sim_to_top:.2f} (divergent). "
-                        f"Do NOT apply {top_name} fungicides based on this visual screening."
-                    ),
-                    "recommended_action": (
-                        "Do NOT apply chemical fungicides or unverified fertilizers. Nutrient deficiencies cannot be definitively diagnosed "
-                        "from foliar photographs alone. Conduct a laboratory leaf-tissue analysis and soil pH/nutrient test to verify magnesium, "
-                        "potassium, and nitrogen levels. If magnesium deficiency is confirmed, an agronomist may recommend a foliar spray of "
-                        "dilute Epsom salts (magnesium sulfate, 10-20 g/L) or soil amendment with dolomitic limestone."
-                    ),
-                    "other_conditions": [],
-                }
+        is_necrotic = foliage & (lum < 95) & (r >= b * 0.85)
+        necrotic_ratio = np.sum(is_necrotic) / foliage_count
+
+        try:
+            from scipy import ndimage as ndi
+            labeled_lesions, num_lesions = ndi.label(is_necrotic)
+            if num_lesions > 0:
+                sizes = ndi.sum(is_necrotic, labeled_lesions, range(1, num_lesions + 1))
+                max_lesion_px = float(np.max(sizes))
+                max_lesion_ratio = max_lesion_px / foliage_count
+            else:
+                max_lesion_ratio = 0.0
+        except Exception:
+            max_lesion_ratio = 0.0
+
+        has_large_blight_lesions = (max_lesion_ratio >= 0.08) or (necrotic_ratio >= 0.25)
+
+        if (
+            top_name == "Tomato Septoria Leaf Spot"
+            and (0.50 <= sim_to_top < 0.60)
+            and chlorosis_ratio > 0.03
+            and not has_large_blight_lesions
+        ):
+            return {
+                "status": "UNSUPPORTED_CONDITION",
+                "condition_display": "Unsupported Condition — Suspected Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency)",
+                "condition_code": "unsupported_nutrient_disorder",
+                "confidence_pct": None,
+                "explanation": (
+                    "Foliage displays pronounced interveinal chlorosis (yellowing between primary leaf veins while veins remain green) "
+                    "accompanied by fine diffuse necrotic flecking, characteristic of Magnesium Deficiency or related physiological nutrient disorders. "
+                    "Nutrient disorders are outside the model's 10 trained disease classes. The model's closest raw mathematical match "
+                    f"was {top_name} ({top_prob*100:.1f}%), but latent feature similarity to {top_name} is only {sim_to_top:.2f} (divergent) "
+                    "and focal circular fungal lesions with concentric rings are absent. Do NOT apply {top_name} fungicides based on this visual screening."
+                ),
+                "recommended_action": (
+                    "Do NOT apply chemical fungicides or unverified fertilizers. Nutrient deficiencies cannot be definitively diagnosed "
+                    "from foliar photographs alone. Conduct a laboratory leaf-tissue analysis and soil pH/nutrient test to verify magnesium, "
+                    "potassium, and nitrogen levels. If magnesium deficiency is confirmed, an agronomist may recommend a foliar spray of "
+                    "dilute Epsom salts (magnesium sulfate, 10-20 g/L) or soil amendment with dolomitic limestone."
+                ),
+                "other_conditions": [],
+            }
 
         return None
 
@@ -574,6 +598,7 @@ class PlantLeafClassifier:
             "display_name": f"Class {top_idx}",
             "recommended_action": "Consult local agronomist.",
         }
+        top_name = top_class_meta.get("display_name", top_class_meta.get("label", ""))
 
         # Build other possible conditions (> 4% probability)
         other_conditions = []
@@ -601,19 +626,59 @@ class PlantLeafClassifier:
             conf_pct = unsupported.get("confidence_pct", None)
             other_conditions = unsupported.get("other_conditions", [])
         else:
-            # 2. Uncertainty gate based on calibrated confidence, margin, and entropy
-            is_uncertain = (top_prob < conf_threshold) or (margin < margin_threshold) or (entropy > entropy_threshold)
+            # Latent feature centroid similarity analysis
+            sim_to_top = 1.0
+            max_sim = 1.0
+            if embedding is not None and self.centroids is not None:
+                emb_norm = embedding / (np.linalg.norm(embedding) + 1e-12)
+                sims = np.dot(self.centroids, emb_norm)
+                max_sim = float(np.max(sims))
+                sim_to_top = float(sims[top_idx]) if top_idx < len(sims) else max_sim
+
+            min_sim_threshold = self.manifest.get("uncertainty_policy", {}).get("min_centroid_similarity", 0.60)
+
+            # 2. Uncertainty gate based on calibrated confidence, margin, entropy, and feature centroid similarity
+            is_uncertain = (
+                (top_prob < conf_threshold)
+                or (margin < margin_threshold)
+                or (entropy > entropy_threshold)
+                or (sim_to_top < min_sim_threshold)
+            )
             if is_uncertain:
                 status = "UNCERTAIN"
                 condition_code = top_class_meta.get("label", str(top_idx))
                 condition_display = f"Uncertain — Suspected {top_class_meta.get('display_name', top_class_meta.get('label'))}"
                 conf_pct = round(top_prob * 100, 1)
-                rec_action = (
-                    f"Visual evidence is inconclusive (top confidence {top_prob*100:.1f}%, margin {margin*100:.1f}%, entropy {entropy:.2f}). "
-                    f"Visual symptoms overlap with {other_conditions[0]['condition'] if other_conditions else 'other stress factors'}. "
-                    "Physical inspection by an agricultural specialist or laboratory leaf-tissue assay is recommended before chemical intervention. "
-                    "Do NOT apply chemical treatments without verified diagnosis."
-                )
+
+                # Lookalike differential diagnosis enrichment for foliar leaf spot diseases
+                if top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot"):
+                    lookalikes = [
+                        c["display_name"]
+                        for c in self.classes
+                        if c["display_name"] in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot")
+                        and c["display_name"] != top_name
+                    ]
+                    for lname in lookalikes:
+                        if not any(c.get("condition") == lname for c in other_conditions):
+                            other_conditions.append({"condition": lname, "probability_pct": None})
+
+                # Suppress nutrient-specific recommendations for uncertain results
+                if top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot"):
+                    rec_action = (
+                        f"Visual evidence exhibits circular lesions with concentric zoning or chlorotic halos consistent with a leaf-spot disease ({top_name}). "
+                        f"However, visual evidence is inconclusive for a definitive diagnosis from a single photograph due to overlapping symptomology "
+                        f"with lookalikes ({', '.join(c['condition'] for c in other_conditions)}) and latent feature divergence from reference laboratory specimens (similarity {sim_to_top:.2f}). "
+                        "Physical verification by a crop specialist or microscopic/laboratory confirmation is recommended before chemical intervention. "
+                        "Do NOT apply chemical fungicides or unverified nutrient fertilizers without confirmed diagnosis. "
+                        "Recommended cultural practices: prune severely blighted lower foliage, improve canopy airflow, and avoid overhead watering."
+                    )
+                else:
+                    rec_action = (
+                        f"Visual evidence is inconclusive (top confidence {top_prob*100:.1f}%, margin {margin*100:.1f}%, entropy {entropy:.2f}, feature similarity {sim_to_top:.2f}). "
+                        f"Visual symptoms overlap with {other_conditions[0]['condition'] if other_conditions else 'other stress factors'}. "
+                        "Physical inspection by an agricultural specialist or laboratory leaf-tissue assay is recommended before chemical intervention. "
+                        "Do NOT apply chemical treatments without verified diagnosis."
+                    )
             else:
                 status = "ASSESSED"
                 condition_code = top_class_meta.get("label", str(top_idx))

@@ -84,6 +84,7 @@
     "confidence_threshold": 0.80,
     "margin_threshold": 0.20,
     "entropy_threshold": 0.50,
+    "min_centroid_similarity": 0.60,
     "min_sharpness_var": 35.0,
     "min_mean_brightness": 25.0,
     "max_mean_brightness": 235.0,
