@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.sqlite
+*.sqlite3
+*.db
+*-wal
+*-shm
+data/
+demo-data/
+*-data/
+*.png
+!plant_rover/static/*.png
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Live-monitor runtime state, tokens, and local environment
+live-data/
+.env
+.env.*
+!.env.example

@@ -1,0 +1,62 @@
+{
+  "crc16_ccitt_false": [
+    {
+      "input_hex": "313233343536373839",
+      "expected_crc": 10673
+    },
+    {
+      "input_hex": "",
+      "expected_crc": 65535
+    },
+    {
+      "input_hex": "414e56455348494f4e5f524f564552",
+      "expected_crc": 10223
+    }
+  ],
+  "serial_frames": [
+    {
+      "name": "heartbeat",
+      "sequence": 1,
+      "type": 3,
+      "payload_hex": "",
+      "encoded_hex": "aa020103a1ae"
+    },
+    {
+      "name": "stop",
+      "sequence": 2,
+      "type": 4,
+      "payload_hex": "",
+      "encoded_hex": "aa020204841a"
+    },
+    {
+      "name": "command_drive",
+      "sequence": 3,
+      "type": 1,
+      "payload_hex": "00140000",
+      "encoded_hex": "aa06030100140000abf9"
+    }
+  ],
+  "radio_frames": [
+    {
+      "name": "sensor_reading",
+      "sequence": 42,
+      "type": 1,
+      "payload_hex": "01002a6553f10008980b220dde1964001e000f0028028a01c25f00",
+      "encoded_hex": "c301011b002a01002a6553f10008980b220dde1964001e000f0028028a01c25f000d70"
+    },
+    {
+      "name": "plant_report",
+      "sequence": 105,
+      "type": 2,
+      "payload_hex": "0100056553f164000055010000221c3e5e5c01",
+      "encoded_hex": "c301021300690100056553f164000055010000221c3e5e5c01528d"
+    },
+    {
+      "name": "history_summary",
+      "sequence": 12,
+      "type": 3,
+      "payload_hex": "026553f1c800901923ff12205000",
+      "encoded_hex": "c301030e000c026553f1c800901923ff122050002ffb"
+    }
+  ]
+}

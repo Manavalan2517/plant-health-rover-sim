@@ -1,0 +1,94 @@
+{
+  "model_name": "plant_disease_mobilenetv2",
+  "version": "1.0.0",
+  "architecture": "MobileNetV2 Transfer Learning",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "preprocessing": {
+    "format": "RGB",
+    "resize": [
+      224,
+      224
+    ],
+    "scaling": "[-1.0, 1.0]",
+    "formula": "(pixel / 127.5) - 1.0",
+    "interpolation": "BILINEAR"
+  },
+  "num_classes": 10,
+  "classes": [
+    {
+      "index": 0,
+      "label": "Tomato_Bacterial_spot",
+      "display_name": "Tomato Bacterial Spot",
+      "recommended_action": "Copper-based bactericide sprays; avoid overhead irrigation; isolate symptomatic plants; sanitize pruning shears."
+    },
+    {
+      "index": 1,
+      "label": "Tomato_Early_blight",
+      "display_name": "Tomato Early Blight",
+      "recommended_action": "Apply preventive fungicide (chlorothalonil or copper); remove lower diseased leaves; improve airflow and mulch soil."
+    },
+    {
+      "index": 2,
+      "label": "Tomato_Late_blight",
+      "display_name": "Tomato Late Blight",
+      "recommended_action": "Immediate removal and destruction of infected foliage; apply targeted late blight fungicide; check neighboring plants daily."
+    },
+    {
+      "index": 3,
+      "label": "Tomato_Leaf_Mold",
+      "display_name": "Tomato Leaf Mold",
+      "recommended_action": "Reduce greenhouse humidity below 85%; increase row ventilation; apply registered fungicide if symptoms spread."
+    },
+    {
+      "index": 4,
+      "label": "Tomato_Septoria_leaf_spot",
+      "display_name": "Tomato Septoria Leaf Spot",
+      "recommended_action": "Remove lower infected foliage; avoid watering from above; apply appropriate protectant fungicide."
+    },
+    {
+      "index": 5,
+      "label": "Tomato_Spider_mites_Two_spotted_spider_mite",
+      "display_name": "Tomato Two-Spotted Spider Mite",
+      "recommended_action": "Apply insecticidal soap or horticultural oil; release predatory mites (Phytoseiidae); reduce dust and heat stress."
+    },
+    {
+      "index": 6,
+      "label": "Tomato__Target_Spot",
+      "display_name": "Tomato Target Spot",
+      "recommended_action": "Ensure proper spacing for air circulation; avoid leaf wetness; apply protective fungicides during warm humid weather."
+    },
+    {
+      "index": 7,
+      "label": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+      "display_name": "Tomato Yellow Leaf Curl Virus",
+      "recommended_action": "Control whitefly vectors using yellow sticky traps and fine mesh netting; remove and bag infected plants immediately."
+    },
+    {
+      "index": 8,
+      "label": "Tomato__Tomato_mosaic_virus",
+      "display_name": "Tomato Mosaic Virus",
+      "recommended_action": "Remove and incinerate infected plants; wash hands and tools thoroughly with milk or TSP; avoid handling tobacco products near crop."
+    },
+    {
+      "index": 9,
+      "label": "Tomato_healthy",
+      "display_name": "Tomato Healthy",
+      "recommended_action": "Crop shows no dominant visual symptoms of disease. Maintain standard irrigation schedule and routine monitoring."
+    }
+  ],
+  "uncertainty_policy": {
+    "confidence_threshold": 0.80,
+    "margin_threshold": 0.20,
+    "entropy_threshold": 0.50,
+    "min_sharpness_var": 35.0,
+    "min_mean_brightness": 25.0,
+    "max_mean_brightness": 235.0,
+    "status_on_low_confidence": "UNCERTAIN",
+    "status_on_unsupported_condition": "UNSUPPORTED_CONDITION",
+    "status_on_quality_fail": "IMAGE_REJECTED"
+  }
+}

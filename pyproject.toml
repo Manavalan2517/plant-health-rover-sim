@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plant-health-rover-sim"
+version = "0.1.0"
+description = "Simulation-first Plant-Health Inspection Rover software"
+requires-python = ">=3.11"
+dependencies = ["Pillow>=10.0,<14"]
+
+[tool.setuptools.packages.find]
+include = ["plant_rover*"]
+
+[tool.setuptools.package-data]
+plant_rover = ["static/*.html"]

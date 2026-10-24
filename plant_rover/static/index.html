@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plant-Health Rover · Simulation Console</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#0d1422;--panel2:#111b2b;--line:#24334b;--text:#edf4ff;--muted:#91a4bf;--cyan:#31d4dc;--green:#31d78c;--yellow:#f1bd52;--red:#ff6178;--purple:#ac8cff;--shadow:0 16px 38px #0004}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 45% -20%,#12263c 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,select{font:inherit}button{border:1px solid var(--line);background:#172438;color:var(--text);padding:9px 12px;border-radius:10px;cursor:pointer;transition:.16s}button:hover{border-color:#4f718d;transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}.primary{background:linear-gradient(135deg,#1aaebf,#198eab);border-color:#39d4dc;color:#041019;font-weight:750}.danger{border-color:#854354;background:#351b2a;color:#ffbbc4}.soft{background:#0b1320}.wrap{max-width:1500px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.brand{display:flex;gap:13px;align-items:center}.orb{height:42px;width:42px;border-radius:14px;background:#102d37;border:1px solid #1c6267;display:grid;place-items:center;color:var(--cyan);font-size:21px;box-shadow:0 0 26px #25d2dc22}.brand h1{margin:0;font-size:clamp(20px,2vw,29px);letter-spacing:-.04em}.brand p{margin:5px 0 0;color:var(--muted)}.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:#a7c4d4;background:#0b1523;font-size:12px;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px currentColor}.warnstrip{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-radius:14px;border:1px solid #76602e;background:#241f15;color:#e9d7a0;margin-bottom:20px}.warnstrip strong{display:block;color:#ffdf8a;margin-bottom:3px}.warnstrip p{margin:0;color:#cdbf95;font-size:12px}.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);gap:16px;align-items:start}.stack{display:grid;gap:16px}.panel{background:linear-gradient(180deg,#101a2a,#0b121e);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid #1d2a3e}.panel-head h2{font-size:15px;letter-spacing:-.02em;margin:0}.panel-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.panel-body{padding:17px 18px}.eyebrow{font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:.15em;text-transform:uppercase}.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.controls select{background:#101c2b;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px;max-width:230px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric{padding:15px;border-radius:14px;background:#0d1725;border:1px solid var(--line);min-width:0}.metric .label{font-size:11px;color:var(--muted)}.metric .value{font-size:25px;font-weight:780;letter-spacing:-.04em;margin-top:5px}.metric .sub{font-size:11px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}.value.cyan{color:var(--cyan)}.value.green{color:var(--green)}.value.yellow{color:var(--yellow)}.value.red{color:var(--red)}.statepill{font-size:11px;font-weight:750;display:inline-block;border:1px solid var(--line);border-radius:99px;padding:4px 8px;background:#152135}.statepill.good{color:var(--green);border-color:#226747;background:#0e251d}.statepill.warn{color:var(--yellow);border-color:#67532d;background:#251f13}.statepill.bad{color:var(--red);border-color:#6f3442;background:#29141e}.statepill.uncertain{color:#c6b4ff;border-color:#574b7b;background:#1e1a31}.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.linkbox{padding:13px;border:1px solid var(--line);border-radius:13px;background:#0c1522}.link-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.linkbox h3{margin:0;font-size:12px}.linkbox p{font-size:11px;line-height:1.45;color:var(--muted);margin:8px 0 10px;min-height:30px}.linkbox .micro{font-size:10px;color:#8ea3bd}.linkbox button{width:100%;padding:7px;font-size:11px}.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.nodegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.node{border:1px solid var(--line);border-radius:13px;background:#0b1421;padding:13px}.node-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;gap:4px}.node h3{font-size:12px;margin:0}.reading{display:grid;grid-template-columns:1fr auto;gap:6px;border-top:1px solid #17263a;padding-top:6px;margin-top:6px;font-size:11px}.reading span:first-child{color:var(--muted)}.reading b{font-weight:700}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th{text-align:left;color:var(--muted);font-weight:600;font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:#0a121d}td,th{padding:10px 11px;border-bottom:1px solid #1a2739}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#122035}.plantid{font-weight:800;color:#dbe8f9}.table-note{color:var(--muted);font-size:11px;padding:12px 18px;border-top:1px solid #1a2739}.evidence{white-space:normal;min-width:180px;max-width:280px;color:#b7c7dc;font-size:11px}.log-list,.outbox-list{display:grid;gap:8px;max-height:310px;overflow:auto}.log{display:grid;grid-template-columns:58px 1fr;gap:10px;border:1px solid #1d2b40;background:#0a121d;border-radius:10px;padding:9px}.logtime{font:10px ui-monospace,monospace;color:#8095b0;padding-top:3px}.log strong{font-size:11px;display:block}.log p{font-size:11px;color:var(--muted);margin:3px 0 0;overflow-wrap:anywhere}.log.critical{border-left:3px solid var(--red)}.log.warning{border-left:3px solid var(--yellow)}.outbox{border:1px solid var(--line);border-radius:12px;padding:11px;background:#0a121d}.outbox header{display:flex;justify-content:space-between;gap:8px}.outbox strong{font-size:11px}.outbox p{white-space:normal;font-size:11px;line-height:1.45;color:#adbed4;margin:7px 0 0}.empty{color:var(--muted);font-size:12px;padding:12px}.preview{display:flex;gap:13px;align-items:center}.preview img{width:110px;height:88px;object-fit:cover;border:1px solid #354760;border-radius:10px;background:#101722}.preview p{font-size:11px;color:var(--muted);margin:5px 0}.progress{height:6px;background:#1b2a3d;border-radius:99px;overflow:hidden;margin-top:10px}.progress>span{height:100%;display:block;background:linear-gradient(90deg,var(--cyan),var(--green));width:0;transition:width .2s}.rowbetween{display:flex;justify-content:space-between;align-items:center;gap:10px}.historyrow{display:grid;grid-template-columns:58px 1fr 90px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #17263a;font-size:11px}.historyrow:last-child{border-bottom:0}.historybar{height:7px;border-radius:99px;background:#1a293b;overflow:hidden}.historybar span{height:100%;display:block;background:linear-gradient(90deg,#38cbd4,#41d99b)}.muted{color:var(--muted)}.tiny{font-size:10px;color:var(--muted)}.foot{color:#5c708a;font-size:10px;text-align:center;padding:25px 0 5px}.flash{position:fixed;right:18px;bottom:18px;background:#16243a;border:1px solid #3a506d;border-radius:12px;padding:12px 16px;box-shadow:var(--shadow);z-index:10;max-width:360px;font-size:12px;display:none}.flash.show{display:block}.divider{height:1px;background:#1a2739;margin:12px 0}.sectionlabel{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7890ad;margin:0 0 10px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:740px){.wrap{padding:14px}.top{display:block}.top-actions{justify-content:flex-start;margin-top:15px}.links,.nodegrid{grid-template-columns:1fr}.split{grid-template-columns:1fr}.metrics{gap:8px}.metric{padding:12px}.metric .value{font-size:21px}.panel-head,.panel-body{padding:13px}.controls select{max-width:100%;flex:1}.preview{align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="orb">◉</div><div><div class="eyebrow">Simulation laboratory · offline first</div><h1>Plant-Health Inspection Rover</h1><p>Software-in-the-loop control room <span class="muted">/ build 0.1 · PC only</span></p></div></div>
+    <div class="top-actions">
+      <span class="badge"><span class="dot"></span> HARDWARE DISABLED</span>
+      <select id="langSelect" aria-label="Language"><option value="en">English</option><option value="ta">தமிழ் (Tamil)</option></select>
+      <button id="traceBtn" title="Export deterministic replay trace">⤓ Trace</button>
+      <button id="speakBtn" title="Speak simulation summary">◖))) Speak</button>
+    </div>
+  </header>
+
+  <div class="warnstrip"><div style="font-size:18px">ⓘ</div><div><strong>Simulation values only — not a diagnosis</strong><p id="disclaimer">No trained ML model is loaded. Leaf cues are test fixtures and all sensor readings/images are synthetic. This screen demonstrates software behaviour, not agricultural accuracy, real SMS delivery, radio range, or physical motor-stop performance.</p></div></div>
+
+  <div class="controls" style="margin-bottom:14px;justify-content:space-between">
+    <div class="controls"><select id="scenarioSelect" aria-label="Simulation scenario"></select><button class="primary" id="startBtn">▶ Start</button><button id="stepBtn">Step one plant</button><button id="pauseBtn">Ⅱ Pause</button><button id="resetBtn">↻ Reset</button></div>
+    <div class="controls"><label class="tiny" for="speedSelect">Speed</label><select id="speedSelect"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option></select><button class="danger" id="estopBtn">■ Emergency stop</button><button id="clearStopBtn" class="soft">Clear sim stop</button></div>
+  </div>
+
+  <section class="metrics">
+    <div class="metric"><div class="label">Simulation state</div><div id="runState" class="value cyan" style="font-size:19px">READY</div><div id="navState" class="sub">Navigation: IDLE</div></div>
+    <div class="metric"><div class="label">Plants inspected</div><div class="value" id="plantCount">0 / 12</div><div class="progress"><span id="plantProgress"></span></div></div>
+    <div class="metric"><div class="label">Reports received at base</div><div class="value green" id="reportCount">0</div><div class="sub" id="pendingCount">0 pending over LoRa</div></div>
+    <div class="metric"><div class="label">Virtual rover battery</div><div class="value yellow" id="batteryValue">96%</div><div class="sub" id="motorValue">Motor: stopped</div></div>
+  </section>
+
+  <div class="layout">
+    <main class="stack">
+      <section class="panel"><div class="panel-head"><div><h2>Communication links</h2><p>Real encoded frames are sent through simulated links with ACK/retry and fault injection.</p></div><span class="statepill good">3 virtual transports</span></div><div class="panel-body"><div class="links" id="links"></div><div class="tiny" style="margin-top:12px">Toggle a link to test the recovery path. LoRa reports have a compact binary payload; no internal report object is copied directly into the base database.</div></div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Virtual field sensor network</h2><p>ESP-NOW-style frames → base station receiver → SQLite. Every value is synthetic.</p></div><span class="badge" id="nodeSummary">3 nodes</span></div><div class="panel-body"><div class="nodegrid" id="nodes"></div></div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Plant inspection reports</h2><p>Assessment is based on deterministic fixtures and provisional demo rules, not a trained model.</p></div><span class="tiny" id="reportMeta">Waiting for first inspection</span></div><div class="table-wrap"><table><thead><tr><th>Plant</th><th>Assessment</th><th>Confidence*</th><th>Image gate</th><th>Field context</th><th>Evidence / next step</th></tr></thead><tbody id="reportsBody"><tr><td colspan="6" class="empty">Start a scenario to see reports transmitted through the virtual LoRa link.</td></tr></tbody></table></div><div class="table-note">*Demo confidence is a test value and is not calibrated probability. “Suspected symptoms” never means confirmed disease.</div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Latest synthetic capture</h2><p>Quality gate performs actual image checks (blur, brightness and clipped pixels).</p></div><span class="badge">synthetic PNG</span></div><div class="panel-body"><div class="preview"><img id="lastImage" alt="Synthetic capture preview" hidden><div><strong id="qualityTitle">No capture yet</strong><p id="qualityDescription">After the first step, the last generated image and its quality-gate result will appear here.</p><div class="tiny" id="qualityMetrics"></div></div></div></div></section>
+    </main>
+
+    <aside class="stack">
+      <section class="panel"><div class="panel-head"><div><h2>24-hour node history</h2><p>Compact base→rover LoRa summary, decoded at the rover.</p></div></div><div class="panel-body" id="historySummaries"><div class="empty">History summary packets appear after startup.</div></div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Link transfer diagnostics</h2><p>Retries, drops, CRC failures and duplicate deliveries.</p></div></div><div class="panel-body"><div id="linkDiagnostics"></div><div class="divider"></div><div class="controls"><button data-link="serial" class="faultBtn">Disconnect serial</button><button data-link="espnow" class="faultBtn">Disconnect ESP-NOW</button><button data-link="lora" class="faultBtn">Disconnect LoRa</button></div><p class="tiny" style="margin:10px 0 0">A disconnect changes simulated transport behaviour only. No physical ports or radios are opened.</p></div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Mock farmer notifications</h2><p>Local outbox records only; no SMS is sent to a phone.</p></div><span class="statepill warn">mock gateway</span></div><div class="panel-body"><div class="outbox-list" id="outboxList"><div class="empty">The summary appears after the simulated row run completes.</div></div><div class="divider"></div><div class="controls"><button id="beepBtn">♫ Test local beep</button><span class="tiny">Browser-only audio</span></div></div></section>
+
+      <section class="panel"><div class="panel-head"><div><h2>Event log</h2><p>Timestamped events from the current simulation session.</p></div><span class="tiny" id="eventCount">0 events</span></div><div class="panel-body"><div style="display:flex;gap:6px;margin-bottom:10px"><input id="logSearch" placeholder="Filter events..." style="background:#101c2b;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--text);font-size:11px;flex:1"><select id="logSeverity" style="background:#101c2b;border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--text);font-size:11px"><option value="all">All levels</option><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Critical</option></select></div><div class="log-list" id="eventList"><div class="empty">Events will be recorded as subsystems run.</div></div></div></section>
+    </aside>
+  </div>
+  <footer class="foot">Plant-Health Rover · PC software-in-the-loop preview · no external hardware required · local data stored in SQLite</footer>
+</div>
+<div class="flash" id="flash" role="status"></div>
+<div id="detailModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(4,9,18,0.85);backdrop-filter:blur(6px);z-index:99;padding:24px;overflow:auto"><div class="panel" style="max-width:720px;margin:30px auto;border:1px solid var(--cyan);box-shadow:0 24px 60px #0009"><div class="panel-head"><div><h2 id="modalTitle">Plant Inspection Details</h2><p id="modalSub">Full sensor & vision fusion audit</p></div><button id="modalClose" style="padding:5px 12px;background:#18283f;border:1px solid var(--line);border-radius:8px">✕ Close</button></div><div class="panel-body" id="modalBody"></div></div></div>
+<script>
+const $ = (id)=>document.getElementById(id);
+let state=null, scenarioDefinitions={}, lang='en', requestBusy=false;
+const labelAssessment={healthy:['Healthy','good'],water_stress_risk:['Water stress risk','warn'],heat_or_nutrient_risk:['Heat / nutrient risk','warn'],suspected_symptoms:['Suspected symptoms','bad'],uncertain:['Uncertain','uncertain'],system_fault:['System fault','bad']};
+const tamilAssessment={healthy:'ஆரோக்கியமாகத் தெரிகிறது',water_stress_risk:'நீர் அழுத்த அபாயம்',heat_or_nutrient_risk:'வெப்பம் / ஊட்டச்சத்து அபாயம்',suspected_symptoms:'அறிகுறிகள் இருக்கலாம்',uncertain:'உறுதியில்லை',system_fault:'அமைப்பு பிழை'};
+function flash(msg){const el=$('flash');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800)}
+async function api(path,method='GET',body=null){const opts={method,headers:{'Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);const r=await fetch(path,opts);const data=await r.json();if(!r.ok)throw new Error(data.error||r.statusText);return data}
+function assessment(code){const key=typeof code==='string'?code:String(code);if(labelAssessment[key])return labelAssessment[key];return ['Healthy','Water stress risk','Heat / nutrient risk','Suspected symptoms','Uncertain','System fault'][Number(code)]||'Uncertain'}
+function stateClass(v){const x=String(v||'').toLowerCase();if(x.includes('complete')||x==='ready'||x==='running')return 'good';if(x.includes('warn')||x.includes('pending')||x==='paused'||x==='awaiting_report_delivery')return 'warn';if(x.includes('stop')||x.includes('fault')||x.includes('emergency'))return 'bad';return 'uncertain'}
+function fmtTime(epoch){if(!epoch)return '—';return new Date(epoch*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+function fmtNum(v,n=1){return v===undefined||v===null||Number.isNaN(Number(v))?'—':Number(v).toFixed(n)}
+function renderScenarioOptions(){const s=$('scenarioSelect');s.innerHTML='';Object.entries(scenarioDefinitions).forEach(([id,meta])=>{const o=document.createElement('option');o.value=id;o.textContent=meta.title;s.append(o)})}
+function renderLinks(s){const metadata={serial:['Pi ↔ virtual ESP32','USB serial frame · CRC16 · sequence + ACK'],espnow:['Field nodes → base','Serialized reading · CRC16 · ACK + duplicate suppression'],lora:['Rover ↔ base','Compact reports / history · CRC16 · ACK + retry']};$('links').innerHTML=Object.entries(s.links).map(([id,item])=>`<div class="linkbox"><div class="link-top"><h3>${metadata[id][0]}</h3><span class="statepill ${item.connected?'good':'bad'}">${item.connected?'CONNECTED':'DISCONNECTED'}</span></div><p>${metadata[id][1]}</p><div class="micro">${item.stats.attempts} attempts · ${item.stats.network_drops} dropped · ${item.stats.corruptions} corrupt</div><button data-toggle="${id}">${item.connected?'Disconnect link':'Reconnect link'}</button></div>`).join('');document.querySelectorAll('[data-toggle]').forEach(btn=>btn.onclick=()=>toggleLink(btn.dataset.toggle,!s.links[btn.dataset.toggle].connected));$('linkDiagnostics').innerHTML=Object.entries(s.links).map(([id,item])=>`<div class="rowbetween" style="margin:8px 0"><span class="tiny">${id.toUpperCase()} · ${item.last_reason}</span><b style="font-size:11px">${item.stats.accepted} accepted</b></div><div class="progress"><span style="width:${item.stats.attempts?Math.min(100,100*item.stats.accepted/item.stats.attempts):0}%"></span></div><div class="tiny" style="margin:4px 0 12px">dup ${item.stats.duplicates} · oversize ${item.stats.size_rejections} · disconnects ${item.stats.disconnects}</div>`).join('')}
+function renderNodes(nodes){$('nodes').innerHTML=nodes.map(n=>{const online=n.status==='online';return `<article class="node"><div class="node-top"><h3>Node ${n.node_id} <span class="muted">/ ${n.zone||'—'}</span></h3><span class="statepill ${online?'good':'warn'}">${n.status||'unknown'}</span></div><div class="reading"><span>Soil moisture</span><b>${fmtNum(n.soil_moisture_pct)}%</b></div><div class="reading"><span>Soil temp</span><b>${fmtNum(n.soil_temperature_c)} °C</b></div><div class="reading"><span>Air temp</span><b>${fmtNum(n.air_temperature_c)} °C</b></div><div class="reading"><span>Relative humidity</span><b>${fmtNum(n.relative_humidity_pct)}%</b></div><div class="reading"><span>N estimate</span><b>${n.nitrogen_mg_kg??'—'} mg/kg</b></div><div class="reading"><span>Battery</span><b>${n.battery_pct??'—'}%</b></div><div class="tiny" style="margin-top:9px">${n.age_seconds===undefined?'No current reading':`Last packet ${Math.floor(n.age_seconds/60)} min ago`} · synthetic</div></article>`}).join('')}
+function renderHistory(summaries){if(!summaries.length){$('historySummaries').innerHTML='<div class="empty">No decoded history packets are available.</div>';return}$('historySummaries').innerHTML=summaries.map(h=>{const span=Math.max(1,h.soil_moisture_max_pct-h.soil_moisture_min_pct);const direction=h.soil_moisture_trend_pct_per_hour;return `<div class="historyrow"><b>Node ${h.node_id}</b><div><div class="historybar"><span style="width:${Math.min(100,Math.max(3,h.soil_moisture_max_pct))}%"></span></div><div class="tiny">Moisture ${h.soil_moisture_min_pct}–${h.soil_moisture_max_pct}% · ${h.sample_count} samples</div></div><span style="text-align:right;color:${direction<0?'var(--yellow)':'var(--green)'}">${direction>0?'+':''}${direction}%/h</span></div><div class="tiny" style="margin:-2px 0 8px 66px">Air ${h.air_temp_min_c}–${h.air_temp_max_c} °C · max RH ${h.humidity_max_pct}% · ${h.stale?'STALE':'recent'}</div>`}).join('')}
+function cueTitle(cue){return String(cue||'').replaceAll('_',' ')}
+let latestReports = [];
+let latestEvents = [];
+
+function showDetail(plantId){
+  const r = latestReports.find(item => item.plant_id === plantId);
+  if(!r) return;
+  const [name, cl] = labelAssessment[r.assessment] || assessment(r.assessment);
+  const shown = lang === 'ta' ? (tamilAssessment[r.assessment] || name) : name;
+  $('modalTitle').textContent = `Plant ${r.plant_id} · ${shown}`;
+  $('modalSub').textContent = `Inspection Epoch: ${r.timestamp_epoch} (${fmtTime(r.timestamp_epoch)})`;
+  const evidence = typeof r.evidence === 'object' ? r.evidence : {};
+  const recAction = r.assessment === 'water_stress_risk' ? 'Check irrigation schedule & root zone moisture.' :
+                    r.assessment === 'heat_or_nutrient_risk' ? 'Inspect canopy ventilation & calibrated soil probe readings.' :
+                    r.assessment === 'suspected_symptoms' ? 'Treat as suspected symptoms only; confirm with manual plant inspection.' :
+                    r.assessment === 'uncertain' ? 'Evidence is inconclusive or quality check failed; retake or inspect manually.' :
+                    'Routine health baseline observed. Continue regular autonomous monitoring.';
+  $('modalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="metric"><div class="label">Assessment & Confidence</div><div class="value ${cl}" style="font-size:18px">${shown}</div><div class="sub">${r.confidence_pct}% demo score · flags 0x${Number(r.risk_flags).toString(16).padStart(2,'0')}</div></div>
+      <div class="metric"><div class="label">Image Quality Gate</div><div class="value ${r.quality_passed?'green':'red'}" style="font-size:18px">${r.quality_passed?'PASSED':'REJECTED'}</div><div class="sub">Score: ${r.image_quality_score}/100</div></div>
+    </div>
+    <div style="background:#0a121d;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px">
+      <h3 style="margin:0 0 8px;font-size:12px;color:var(--cyan)">Sensor Evidence Used</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px">
+        <div>Soil Moisture: <b>${r.soil_moisture_pct}%</b></div>
+        <div>Air Temp: <b>${r.air_temperature_c}°C</b></div>
+        <div>Humidity: <b>${r.relative_humidity_pct}%</b></div>
+      </div>
+    </div>
+    <div style="background:#0a121d;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px">
+      <h3 style="margin:0 0 8px;font-size:12px;color:var(--cyan)">Vision Cue & Provenance</h3>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 4px">Visual Cue: <b>${cueTitle(r.cue_name)}</b></p>
+      <p style="font-size:11px;color:var(--muted);margin:0">Provenance: ${escapeHtml(evidence.provenance || 'Compact LoRa Report Payload')}</p>
+    </div>
+    <div style="background:#132032;border:1px solid #233e5c;border-radius:12px;padding:12px">
+      <h3 style="margin:0 0 6px;font-size:12px;color:var(--yellow)">Recommended Action</h3>
+      <p style="margin:0;font-size:12px;color:#d7e4f3">${recAction}</p>
+    </div>
+  `;
+  $('detailModal').style.display = 'grid';
+}
+$('modalClose').onclick = () => { $('detailModal').style.display = 'none'; };
+
+function renderReports(rows){
+  latestReports = rows;
+  if(!rows.length){
+    $('reportsBody').innerHTML='<tr><td colspan="6" class="empty">No base station reports yet. Start a scenario to begin.</td></tr>';
+    $('reportMeta').textContent='Waiting for first inspection';
+    return;
+  }
+  $('reportMeta').textContent=`${rows.length} stored at base (click row for details)`;
+  const order=[...rows].sort((a,b)=>b.plant_index-a.plant_index);
+  $('reportsBody').innerHTML=order.map(r=>{
+    const [name,cl]=labelAssessment[r.assessment]||assessment(r.assessment);
+    const shown=lang==='ta'?(tamilAssessment[r.assessment]||name):name;
+    const quality=r.quality_passed?'<span class="statepill good">PASS</span>':'<span class="statepill bad">REJECTED</span>';
+    const moisture=`${r.soil_moisture_pct}% soil · ${r.air_temperature_c}°C air · ${r.relative_humidity_pct}% RH`;
+    const evidence=typeof r.evidence==='object'?r.evidence:{};
+    const note=evidence.provenance||'Received via serialized LoRa packet';
+    return `<tr onclick="showDetail('${r.plant_id}')" style="cursor:pointer" title="Click to view full inspection audit"><td><span class="plantid">${r.plant_id}</span><div class="tiny">${fmtTime(r.timestamp_epoch)}</div></td><td><span class="statepill ${cl}">${shown}</span><div class="tiny" style="margin-top:5px">cue: ${cueTitle(r.cue_name)}</div></td><td>${r.confidence_pct}%<div class="tiny">demo only</div></td><td>${quality}<div class="tiny">score ${r.image_quality_score}/100</div></td><td>${moisture}</td><td class="evidence">${escapeHtml(note)}<br><span class="tiny">flags 0x${Number(r.risk_flags).toString(16).padStart(2,'0')}</span></td></tr>`
+  }).join('');
+}
+
+function renderEvents(rows){
+  latestEvents = rows;
+  applyEventFilters();
+}
+
+function applyEventFilters(){
+  const query = ($('logSearch').value || '').toLowerCase();
+  const severity = $('logSeverity').value;
+  const filtered = latestEvents.filter(e => {
+    if(severity !== 'all' && e.severity !== severity) return false;
+    if(!query) return true;
+    const text = `${e.component} ${e.event_type} ${e.outcome || ''} ${JSON.stringify(e.details||{})}`.toLowerCase();
+    return text.includes(query);
+  });
+  $('eventCount').textContent=`${filtered.length} / ${latestEvents.length} events`;
+  $('eventList').innerHTML=filtered.length?filtered.map(e=>`<div class="log ${e.severity==='critical'?'critical':e.severity==='warning'?'warning':''}"><div class="logtime">${escapeHtml((e.timestamp||'').slice(11,19)||'—')}</div><div><strong>${escapeHtml(e.component)} · ${escapeHtml(e.event_type)}</strong><p>${escapeHtml(e.outcome||'')} ${escapeHtml(JSON.stringify(e.details||{}))}</p></div></div>`).join(''):'<div class="empty">No matching events.</div>';
+}
+$('logSearch').oninput = applyEventFilters;
+$('logSeverity').onchange = applyEventFilters;
+
+function renderOutbox(rows){$('outboxList').innerHTML=rows.length?rows.map(o=>`<article class="outbox"><header><strong>${escapeHtml(o.channel)} <span class="muted">· ${escapeHtml(o.status)}</span></strong><span class="tiny">${escapeHtml((o.timestamp||'').slice(11,19))}</span></header><p>${escapeHtml(o.message)}</p></article>`).join(''):'<div class="empty">The mock gateway has no messages yet.</div>'}
+function renderQuality(s){const q=s.last_quality;if(!q){$('qualityTitle').textContent='No capture yet';$('qualityDescription').textContent='Run one step to generate a synthetic image.';$('qualityMetrics').textContent='';$('lastImage').hidden=true;return}$('qualityTitle').textContent=q.accepted?'Quality gate passed':'Quality gate rejected';$('qualityDescription').textContent=`Reason: ${q.reason||'capture_failed'}. A rejected image is never silently labelled healthy.`;$('qualityMetrics').textContent=`Score ${q.score??0}/100 · sharpness ${fmtNum(q.sharpness_variance,1)} · brightness ${fmtNum(q.mean_brightness,1)} · clipped ${fmtNum(q.clipped_fraction,3)}`;if(s.last_fixture_image){const m=s.last_fixture_image.match(/images[/\\](.*)$/);if(m){$('lastImage').src='/images/'+m[1].split(/[/\\]/).map(encodeURIComponent).join('/');$('lastImage').hidden=false}}else $('lastImage').hidden=true}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(snap){state=snap.state;scenarioDefinitions=snap.scenarios||scenarioDefinitions;if(!$('scenarioSelect').options.length)renderScenarioOptions();if($('scenarioSelect').value!==state.scenario)$('scenarioSelect').value=state.scenario;$('runState').textContent=state.run_state.replaceAll('_',' ');$('runState').className='value '+(stateClass(state.run_state)==='good'?'green':stateClass(state.run_state)==='bad'?'red':stateClass(state.run_state)==='warn'?'yellow':'cyan');$('navState').textContent='Navigation: '+state.navigation_state.replaceAll('_',' ');$('plantCount').textContent=`${state.plants_visited} / ${state.plants_total}`;$('plantProgress').style.width=`${Math.min(100,100*state.plants_visited/state.plants_total)}%`;$('reportCount').textContent=state.base_reports_received;$('pendingCount').textContent=`${state.pending_lora_reports} pending over LoRa`;$('batteryValue').textContent=state.rover_battery_pct+'%';$('motorValue').textContent=`Motor: ${state.motor_enabled?'moving ('+state.virtual_motor_speed_pct+'%)':'stopped'}${state.watchdog_tripped?' · watchdog tripped':''}`;$('nodeSummary').textContent=`${state.sensor_nodes.filter(n=>n.status==='online').length} / ${state.sensor_nodes.length} online`;$('disclaimer').textContent=state.demo_disclaimer;renderLinks(state);renderNodes(state.sensor_nodes);renderHistory(state.history_summaries);renderReports(snap.reports);renderEvents(snap.events);renderOutbox(snap.outbox);renderQuality(state);$('stepBtn').disabled=['COMPLETE','SAFETY_STOP','EMERGENCY_STOP','LOW_BATTERY_STOP'].includes(state.run_state);$('pauseBtn').disabled=!['RUNNING'].includes(state.run_state);$('startBtn').disabled=['COMPLETE','SAFETY_STOP','EMERGENCY_STOP','LOW_BATTERY_STOP'].includes(state.run_state);}
+async function refresh(){if(requestBusy)return;requestBusy=true;try{const snap=await api('/api/snapshot');render(snap)}catch(e){flash('Dashboard API error: '+e.message)}finally{requestBusy=false}}
+async function control(action,extra={}){try{await api('/api/control','POST',{action,...extra});await refresh();flash(action==='step'?'Advanced one plant step.':`Simulation: ${action.replaceAll('_',' ')}.`)}catch(e){flash(e.message)}}
+async function toggleLink(link,enabled){try{await api('/api/fault','POST',{link,enabled});await refresh();flash(`${link} ${enabled?'connected':'disconnected'} in simulation.`)}catch(e){flash(e.message)}}
+$('scenarioSelect').addEventListener('change',e=>control('reset',{scenario:e.target.value}));$('startBtn').onclick=()=>control('start');$('stepBtn').onclick=()=>control('step');$('pauseBtn').onclick=()=>control('pause');$('resetBtn').onclick=()=>control('reset',{scenario:$('scenarioSelect').value});$('estopBtn').onclick=()=>control('estop');$('clearStopBtn').onclick=()=>control('clear_estop');$('speedSelect').onchange=e=>control('speed',{speed:Number(e.target.value)});$('langSelect').onchange=e=>{lang=e.target.value;control('language',{language:lang})};document.querySelectorAll('.faultBtn').forEach(b=>b.onclick=()=>{const label=b.textContent;const link=b.dataset.link;const connected=state?.links?.[link]?.connected??true;toggleLink(link,!connected)});
+$('traceBtn').onclick=async()=>{try{const trace=await api('/api/trace');const blob=new Blob([JSON.stringify(trace,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`replay_trace_${trace.session_id}.json`;a.click();URL.revokeObjectURL(url);flash('Replay trace exported successfully.')}catch(e){flash('Export failed: '+e.message)}};
+$('speakBtn').onclick=()=>{if(!state)return;const msg=lang==='ta'?`தாவர ஆய்வு சிமுலேஷன். ${state.plants_visited} தாவரங்கள் பரிசோதிக்கப்பட்டன. ${state.base_reports_received} அறிக்கைகள் கிடைத்துள்ளன. இது உண்மையான நோயறிதல் அல்ல.`:`Plant inspection simulation. ${state.plants_visited} plants inspected. ${state.base_reports_received} reports received. This is not a real diagnosis.`;if('speechSynthesis'in window){const utter=new SpeechSynthesisUtterance(msg);utter.lang=lang==='ta'?'ta-IN':'en-IN';speechSynthesis.cancel();speechSynthesis.speak(utter)}else flash('Speech synthesis is unavailable in this browser.')};$('beepBtn').onclick=()=>{try{const ctx=new (window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const gain=ctx.createGain();osc.frequency.value=720;gain.gain.value=.04;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.16);osc.onended=()=>ctx.close()}catch(e){flash('Browser audio is unavailable.')}};
+refresh();setInterval(refresh,900);
+</script>
+</body></html>
+

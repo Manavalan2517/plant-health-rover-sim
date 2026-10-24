@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Plant-Health Rover · Live Monitor & Leaf Inspection</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#0e1726;--panel2:#111d2e;--line:#25364d;--text:#edf4ff;--muted:#94a7c0;--cyan:#36d3dc;--green:#35d58e;--amber:#f3c15b;--red:#ff6c82;--purple:#c1a7ff;--shadow:0 16px 40px #0005}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 48% -20%,#142b41 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button{font:inherit;border:1px solid var(--line);background:#142338;color:var(--text);padding:8px 14px;border-radius:9px;cursor:pointer;transition:all .15s}button:hover{border-color:#53718d;background:#1a2c46}.wrap{max-width:1440px;margin:auto;padding:26px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:16px}.brand{display:flex;gap:13px;align-items:center}.orb{width:43px;height:43px;border-radius:14px;display:grid;place-items:center;background:#102a35;border:1px solid #22606b;color:var(--cyan);font-size:22px}.eyebrow{font-size:10px;font-weight:800;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase}.brand h1{font-size:clamp(20px,2.6vw,30px);letter-spacing:-.04em;margin:2px 0}.brand p{color:var(--muted);margin:3px 0 0}.top-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:99px;padding:8px 11px;background:#0c1522;font-size:11px;color:#b7c8db}.dot{width:7px;height:7px;border-radius:50%;background:var(--amber)}.dot.online{background:var(--green)}
+.nav-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:12px}.tab-btn{background:#0e1726;border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px;padding:9px 18px;border-radius:10px}.tab-btn.active{background:#16253b;color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 15px rgba(54,211,220,.15)}
+.banner{padding:15px 18px;border-radius:14px;border:1px solid #66542f;background:#241e14;margin-bottom:18px;display:flex;gap:12px}.banner.warn{border-color:#705828;background:#241d11}.banner.info{border-color:#215469;background:#0e202c}.banner-icon{font-size:20px}.banner strong{display:block;color:#ffe1a0;font-size:14px;margin-bottom:3px}.banner.info strong{color:#9feeff}.banner p{margin:0;color:#d4c49b;font-size:12px}.banner.info p{color:#a9d1de}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric,.panel{background:linear-gradient(180deg,#101b2b,#0a121f);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.metric{padding:15px;min-width:0}.metric .label{font-size:11px;color:var(--muted)}.metric .value{font-size:24px;font-weight:800;letter-spacing:-.04em;margin-top:5px;overflow-wrap:anywhere}.metric .sub{font-size:11px;color:var(--muted);margin-top:3px}
+.layout{display:grid;grid-template-columns:1.12fr .88fr;gap:15px;align-items:start}.stack{display:grid;gap:15px}.panel{overflow:hidden}.head{padding:15px 17px;border-bottom:1px solid #1e2d42;display:flex;align-items:center;justify-content:space-between;gap:10px}.head h2{font-size:14px;margin:0}.head p{font-size:11px;margin:3px 0 0;color:var(--muted)}.body{padding:15px 17px}.count{font-size:10px;border:1px solid var(--line);border-radius:99px;padding:4px 8px;color:var(--muted);white-space:nowrap}
+.devices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.device{padding:12px;border:1px solid var(--line);border-radius:12px;background:#0a1320;min-width:0}.device-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.device h3{font-size:12px;margin:0}
+.state{display:inline-block;border:1px solid #685431;border-radius:99px;padding:3px 7px;color:var(--amber);background:#211b12;font-size:10px;white-space:nowrap;font-weight:700}.state.online{border-color:#266447;color:var(--green);background:#0d241b}.state.disconnected,.state.critical{border-color:#6d3a47;color:#ff9aa9;background:#25141b}.state.stale{border-color:#685431;color:var(--amber);background:#211b12}.state.uncertain{border-color:#685431;color:var(--amber);background:#231c11}.state.info{border-color:#265e6d;color:var(--cyan);background:#0f242d}
+.links{display:grid;gap:8px}.link{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-bottom:1px solid #1b293b;padding:9px 0}.link:last-child{border-bottom:0}.link strong{font-size:12px}.link small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.blank{border:1px dashed #34455b;border-radius:12px;padding:23px 16px;text-align:center;background:#0b1320}.blank .icon{font-size:25px;color:#6c8099;margin-bottom:5px}.blank strong{display:block;font-size:12px;color:#c0cede}.blank p{font-size:11px;color:var(--muted);margin:5px auto 0;max-width:510px}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:11px;white-space:nowrap}th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:650;background:#0a121e}th,td{padding:10px 11px;border-bottom:1px solid #1a293b}tbody tr:last-child td{border-bottom:0}.subnote{font-size:10px;color:var(--muted);padding:10px 17px;border-top:1px solid #1a293b}
+.events{display:grid;gap:8px;max-height:340px;overflow:auto}.event{display:grid;grid-template-columns:76px 1fr;gap:10px;border:1px solid #1e2b40;border-radius:10px;background:#0a121d;padding:10px}.event time{color:#8096b0;font-size:10px;font-variant-numeric:tabular-nums}.event strong{display:block;font-size:11px}.event p{font-size:11px;color:var(--muted);margin:3px 0 0;overflow-wrap:anywhere}.event.warning{border-left:3px solid var(--amber)}.event.critical{border-left:3px solid var(--red)}
+.foot{text-align:center;font-size:10px;color:#5f728a;padding:24px 0 5px}.freshness{font-size:11px;color:var(--muted)}
+/* Inspection styles */
+.dropzone{border:2px dashed #2f435c;border-radius:14px;padding:28px 18px;text-align:center;background:#0b1422;cursor:pointer;transition:all .2s;position:relative}
+.dropzone:hover,.dropzone.dragover{border-color:var(--cyan);background:#0e1b2e}
+.dropzone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.preview-box{display:flex;gap:15px;align-items:center;background:#0a121e;padding:12px;border-radius:12px;border:1px solid var(--line);margin-top:14px}
+.preview-img{width:100px;height:100px;object-fit:cover;border-radius:9px;border:1px solid #23374d;background:#050911}
+.gate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.gate-item{background:#08101a;border:1px solid var(--line);border-radius:9px;padding:8px 10px;text-align:center}
+.gate-item strong{display:block;font-size:13px;margin-top:2px}
+.gate-item small{color:var(--muted);font-size:10px}
+.progress-bar{height:7px;background:#142236;border-radius:99px;overflow:hidden;margin:6px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .4s}
+.btn-primary{background:linear-gradient(180deg,#196078,#104153);border:1px solid #2da6bc;color:#fff;font-weight:700;padding:10px 20px;border-radius:10px}
+.btn-primary:hover{background:linear-gradient(180deg,#1f7795,#144f65);border-color:#3fe2ff}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.wrap{padding:13px}.top{display:block}.top-actions{margin-top:14px;justify-content:flex-start}.devices{grid-template-columns:1fr}.gate-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="brand"><div class="orb">◉</div><div><div class="eyebrow">Live monitoring · offline-first</div><h1>Plant-Health Inspection Rover</h1><p>Real device data only <span class="muted">/ read-only monitor</span></p></div></div>
+    <div class="top-actions">
+      <span class="badge"><span class="dot" id="statusDot"></span><span id="statusLabel">WAITING FOR LIVE DATA</span></span>
+      <span class="badge">Synthetic data: disabled</span>
+      <button id="refreshBtn" type="button">↻ Refresh</button>
+    </div>
+  </header>
+
+  <nav class="nav-tabs" aria-label="Section navigation">
+    <button id="tabLiveBtn" class="tab-btn active" type="button">◉ Live Hardware Telemetry</button>
+    <button id="tabInspectBtn" class="tab-btn" type="button">🔬 Manual Leaf Image Inspection (PC Only)</button>
+  </nav>
+
+  <!-- LIVE TELEMETRY VIEW -->
+  <div id="liveView">
+    <section class="banner" role="status" aria-live="polite"><div class="banner-icon">ⓘ</div><div><strong id="bannerTitle">No live device data received</strong><p id="bannerText">No physical hardware or authenticated device bridge is connected. Live measurements, inspections and telemetry will remain empty until genuine device packets arrive. No sample values are displayed.</p></div></section>
+
+    <section class="metrics" aria-label="Live status summary">
+      <article class="metric"><div class="label">Live devices</div><div class="value" id="onlineDevices">—</div><div class="sub" id="deviceSummary">No heartbeat received</div></article>
+      <article class="metric"><div class="label">Live field nodes</div><div class="value" id="sensorNodes">—</div><div class="sub" id="sensorSummary">Waiting for node packets</div></article>
+      <article class="metric"><div class="label">Rover battery</div><div class="value" id="batteryValue">—</div><div class="sub" id="roverState">No live rover telemetry</div></article>
+      <article class="metric"><div class="label">Latest live inspection</div><div class="value" id="inspectionCount">—</div><div class="sub" id="inspectionSummary">No inspection report received</div></article>
+    </section>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="panel"><div class="head"><div><h2>Device connections</h2><p>Only device heartbeats received from the live bridge can change status.</p></div><span class="count" id="deviceCount">0 discovered</span></div><div class="body"><div class="devices" id="devicesGrid"><div class="blank"><div class="icon">⌁</div><strong>No devices discovered</strong><p>Waiting for real device heartbeats.</p></div></div></div></section>
+
+        <section class="panel"><div class="head"><div><h2>Communication links</h2><p>No status is assumed when there has been no real link observation.</p></div><span class="count">Live observations</span></div><div class="body"><div class="links" id="linksList"></div></div></section>
+
+        <section class="panel"><div class="head"><div><h2>Latest field sensor readings</h2><p>Stale packets are excluded from this live view.</p></div><span class="count" id="readingCount">0 live nodes</span></div><div class="table-wrap"><table><thead><tr><th>Node</th><th>Sample time</th><th>Soil moisture</th><th>Soil temp</th><th>Air temp</th><th>Humidity</th><th>N / P / K</th><th>Battery</th></tr></thead><tbody id="readingsBody"><tr><td colspan="8"><div class="blank"><strong>No live sensor readings</strong><p>Values will appear here only after the system receives real field-node packets.</p></div></td></tr></tbody></table></div><div class="subnote">Each value is shown only when it exists in the received packet. Missing fields are never replaced with zero or a sample value.</div></section>
+
+        <section class="panel"><div class="head"><div><h2>Rover telemetry</h2><p>Latest fresh telemetry reported by the real rover bridge.</p></div><span class="count" id="roverSampleTime">No packet</span></div><div class="body" id="roverTelemetry"><div class="blank"><div class="icon">⌁</div><strong>No live rover telemetry</strong><p>Position, heading, state, motor and battery fields are not available until a real rover packet arrives.</p></div></div></section>
+      </div>
+
+      <div class="stack">
+        <section class="panel"><div class="head"><div><h2>Plant inspection reports</h2><p>Device-reported results only; no dashboard-generated diagnosis.</p></div><span class="count" id="reportCount">0 received</span></div><div class="table-wrap"><table><thead><tr><th>Plant</th><th>Inspection time</th><th>Assessment</th><th>Confidence</th><th>Image quality</th><th>Model</th></tr></thead><tbody id="reportsBody"><tr><td colspan="6"><div class="blank"><strong>No live inspection reports</strong><p>No reports will be invented or inferred while the rover is disconnected.</p></div></td></tr></tbody></table></div><div class="subnote">A reported assessment is not independently verified by this dashboard. Model validation remains a separate task.</div></section>
+
+        <section class="panel"><div class="head"><div><h2>Live event log</h2><p>Events created from device packets or observed connection-state changes.</p></div><span class="count" id="eventCount">0 events</span></div><div class="body"><div class="events" id="eventsList"><div class="blank"><strong>No live events received</strong><p>Device telemetry events will appear here after the first authenticated message.</p></div></div></div></section>
+
+        <section class="panel"><div class="head"><div><h2>Data integrity</h2><p>Current operating constraints</p></div></div><div class="body" style="display:grid;gap:10px">
+          <div class="link"><div><strong>Runtime mode</strong><small>Dashboard does not start simulation or open physical device ports.</small></div><span class="state online">LIVE ONLY</span></div>
+          <div class="link"><div><strong>Data generation</strong><small>No synthetic sensors, fixture images, assumed values or demo reports.</small></div><span class="state online">DISABLED</span></div>
+          <div class="link"><div><strong>Device ingestion</strong><small id="ingestionStatus">Authenticated bridge token has not been configured.</small></div><span class="state" id="ingestionBadge">DISABLED</span></div>
+          <div class="link"><div><strong>Dashboard controls</strong><small>Read-only. Motor control, E-stop clearance and device configuration are not issued from this page.</small></div><span class="state">READ ONLY</span></div>
+        </div></section>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL LEAF INSPECTION VIEW -->
+  <div id="inspectView" style="display:none">
+    <section class="banner info" role="status"><div class="banner-icon">🔬</div><div><strong>Manual Leaf Image Inspection (PC Mode)</strong><p>Upload an infected or suspect tomato leaf photograph to evaluate potential disease classes using the trained MobileNetV2 classifier. Sensor readings remain unavailable and are not simulated.</p></div></section>
+
+    <div class="layout">
+      <!-- UPLOAD & QUALITY SECTION -->
+      <div class="stack">
+        <section class="panel">
+          <div class="head"><div><h2>Upload leaf photograph</h2><p>Accepts JPG, JPEG, PNG, and WebP (max 10 MB, up to 4096×4096 px).</p></div><span class="count" id="modelStatusBadge">Checking model...</span></div>
+          <div class="body">
+            <div class="dropzone" id="dropArea">
+              <input type="file" id="leafInput" accept=".jpg,.jpeg,.png,.webp">
+              <div style="font-size:32px;margin-bottom:6px">📷</div>
+              <strong>Drop leaf image here or click to browse</strong>
+              <p style="color:var(--muted);font-size:11px;margin:5px 0 0">Ensure the leaf is in focus under even lighting for accurate visual evaluation.</p>
+            </div>
+
+            <div style="margin:10px 0 6px;padding:8px 12px;background:#070f1a;border:1px solid #162436;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <span style="font-size:11px;color:var(--muted)">Quick demo samples:</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button type="button" id="btnSampleYellowCurl" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid #1e334d;background:#0d1d30;color:var(--cyan);cursor:pointer">🍃 Yellow Leaf Curl</button>
+                <button type="button" id="btnSampleSeptoria" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid #1e334d;background:#0d1d30;color:var(--amber);cursor:pointer">🍂 Septoria Leaf Spot</button>
+                <button type="button" id="btnSampleHealthy" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid #1e334d;background:#0d1d30;color:var(--green);cursor:pointer">🌿 Healthy Leaf</button>
+              </div>
+            </div>
+
+            <div class="preview-box" id="previewBox" style="display:none">
+              <img id="previewImg" class="preview-img" alt="Uploaded leaf preview">
+              <div style="flex:1;min-width:0">
+                <strong id="previewFileName" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">leaf.jpg</strong>
+                <small id="previewFileSize" style="color:var(--muted);font-size:10px">0 KB</small>
+                <div style="margin-top:8px;display:flex;gap:8px">
+                  <button id="analyzeBtn" class="btn-primary" type="button">🔬 Analyze leaf condition</button>
+                  <button id="clearBtn" type="button">Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="qualityCard" style="display:none;margin-top:14px">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Image quality gate assessment:</div>
+              <div class="gate-grid">
+                <div class="gate-item"><small>Resolution</small><strong id="gateDim">—</strong></div>
+                <div class="gate-item"><small>Sharpness</small><strong id="gateSharp">—</strong></div>
+                <div class="gate-item"><small>Exposure</small><strong id="gateExp">—</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="head"><div><h2>Model architecture & supported classes</h2><p>MobileNetV2 Transfer Learning</p></div><span class="count">10 classes</span></div>
+          <div class="body" style="font-size:11px">
+            <p style="margin:0 0 10px;color:var(--muted)">Trained on balanced tomato leaf pathology dataset with leakage-free group splits. Preprocessing: bilinear resize to 224×224 and [-1.0, 1.0] scaling.</p>
+            <div id="classList" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RESULTS SECTION -->
+      <div class="stack">
+        <section class="panel" id="resultPanel">
+          <div class="head"><div><h2>Inspection assessment</h2><p>Model prediction, confidence calibration, and uncertainty</p></div><span class="state" id="assessmentStatusBadge">AWAITING IMAGE</span></div>
+          <div class="body" id="resultBody">
+            <div class="blank"><div class="icon">🔍</div><strong>No image analyzed yet</strong><p>Select a tomato leaf photo on the left and click "Analyze leaf condition" to inspect.</p></div>
+          </div>
+        </section>
+
+        <!-- SENSOR DISCLAIMER -->
+        <section class="banner warn" role="note" style="margin-bottom:0">
+          <div class="banner-icon">⚠️</div>
+          <div>
+            <strong>Sensor data unavailable</strong>
+            <p>Live soil moisture, soil temperature, air temperature, humidity, and NPK measurements are unavailable because no external hardware is connected. This result is strictly an isolated visual assessment on PC.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- RECENT MANUAL INSPECTIONS TABLE -->
+    <section class="panel" style="margin-top:15px">
+      <div class="head"><div><h2>Recent manual inspections (current session)</h2><p>In-memory audit log of leaf photographs evaluated during this browser session.</p></div><span class="count" id="manualHistoryCount">0 inspections</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Inspection ID</th><th>Timestamp (UTC)</th><th>File</th><th>Predicted condition</th><th>Confidence</th><th>Status</th><th>Sharpness</th></tr></thead>
+          <tbody id="manualHistoryBody">
+            <tr><td colspan="7"><div class="blank"><strong>No manual inspections performed yet</strong><p>Upload a photograph above to generate your first assessment.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">Live-only monitor · local display · <span id="lastRefresh">Waiting for first status check</span> · No cloud services required</footer>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = value => value === null || value === undefined || value === '' ? '—' : value;
+const fmtNum = (value, digits=1) => value === null || value === undefined ? '—' : Number(value).toFixed(digits);
+const fmtTime = value => {if(!value)return '—';const d=new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleString();};
+const labels = {rover:'Raspberry Pi rover',esp32_controller:'ESP32 motor controller',base_station:'Base station',sensor_node:'Field sensor node',camera:'Camera source',rtc:'Real-time clock',gsm:'GSM/SMS module'};
+const linkLabels = {serial:'Pi ↔ ESP32 serial',lora:'Rover ↔ base LoRa',esp_now:'Field-node ESP-NOW',camera:'Camera capture',rtc:'RTC time source',gsm:'GSM/SMS modem'};
+
+// Tab navigation
+$('tabLiveBtn').addEventListener('click', () => {
+  $('tabLiveBtn').classList.add('active');
+  $('tabInspectBtn').classList.remove('active');
+  $('liveView').style.display = 'block';
+  $('inspectView').style.display = 'none';
+});
+$('tabInspectBtn').addEventListener('click', () => {
+  $('tabInspectBtn').classList.add('active');
+  $('tabLiveBtn').classList.remove('active');
+  $('liveView').style.display = 'none';
+  $('inspectView').style.display = 'block';
+  loadModelInfo();
+  loadManualHistory();
+});
+
+function statusPill(status){let cl=status==='online'||status==='connected'||status==='ASSESSED'?'online':status==='stale'||status==='UNCERTAIN'||status==='UNSUPPORTED_CONDITION'?'uncertain':status==='disconnected'||status==='IMAGE_REJECTED'||status==='MODEL_UNAVAILABLE'?'critical':'';return `<span class="state ${cl}">${esc(String(status||'unknown').replaceAll('_',' ').toUpperCase())}</span>`;}
+
+// Live telemetry rendering
+function renderDevices(devices){$('deviceCount').textContent=`${devices.length} discovered`;if(!devices.length){$('devicesGrid').innerHTML='<div class="blank" style="grid-column:1/-1"><div class="icon">⌁</div><strong>No devices discovered</strong><p>No heartbeat from a physical device has been received. Device count stays unknown until real messages arrive.</p></div>';return;}
+ $('devicesGrid').innerHTML=devices.map(d=>`<article class="device"><div class="device-top"><h3>${esc(labels[d.device_type]||d.device_type)} · ${esc(d.device_id)}</h3>${statusPill(d.status)}</div><p>Transport: ${esc(fmt(d.transport))}<br>Firmware: ${esc(fmt(d.firmware_version))}<br>Last seen: ${esc(fmtTime(d.last_seen_at))}<br>${esc(d.status_detail||'')}</p></article>`).join('');}
+function renderLinks(links){$('linksList').innerHTML=links.map(link=>{let txt=link.status==='no_observation'?'No live observation':link.status==='stale'?'Last observation is stale':link.connected?'Connected (reported by device)':'Disconnected (reported by device)';return `<div class="link"><div><strong>${esc(linkLabels[link.link_id]||link.link_id)}</strong><small>${esc(txt)}${link.updated_at?' · Updated '+esc(fmtTime(link.updated_at)):''}${link.source_device_id?' · Source '+esc(link.source_device_id):''}${link.error?' · '+esc(link.error):''}</small></div>${statusPill(link.status)}</div>`;}).join('');}
+function renderReadings(rows){$('readingCount').textContent=`${rows.length} live nodes`;if(!rows.length){$('readingsBody').innerHTML='<tr><td colspan="8"><div class="blank"><strong>No live sensor readings</strong><p>Stale or missing readings are not shown as current values.</p></div></td></tr>';return;}
+ $('readingsBody').innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.node_id)}</strong><div class="tiny">seq ${esc(fmt(r.sequence))}</div></td><td>${esc(fmtTime(r.timestamp))}</td><td>${r.soil_moisture_pct==null?'—':fmtNum(r.soil_moisture_pct)+'%'}</td><td>${r.soil_temperature_c==null?'—':fmtNum(r.soil_temperature_c)+' °C'}</td><td>${fmtNum(r.air_temperature_c)+' °C'}</td><td>${fmtNum(r.relative_humidity_pct)+'%'}</td><td>${esc(fmt(r.nitrogen_mg_kg))} / ${esc(fmt(r.phosphorus_mg_kg))} / ${esc(fmt(r.potassium_mg_kg))}</td><td>${r.battery_pct==null?'—':fmtNum(r.battery_pct)+'%'}</td></tr>`).join('');}
+function renderRover(r){if(!r){$('batteryValue').textContent='—';$('roverState').textContent='No fresh live rover telemetry';$('roverSampleTime').textContent='No packet';$('roverTelemetry').innerHTML='<div class="blank"><div class="icon">⌁</div><strong>No live rover telemetry</strong><p>The rover has not sent a current authenticated telemetry packet. No values are estimated.</p></div>';return;}
+ $('batteryValue').textContent=r.battery_pct==null?'—':fmtNum(r.battery_pct)+'%';$('roverState').textContent=fmt(r.state);$('roverSampleTime').textContent=fmtTime(r.timestamp);const fields=[['Device',r.device_id],['State',r.state],['Current plant',r.plant_id],['Position',r.position_m==null?null:fmtNum(r.position_m)+' m'],['Heading',r.heading_deg==null?null:fmtNum(r.heading_deg)+'°'],['Speed',r.speed_m_s==null?null:fmtNum(r.speed_m_s)+' m/s'],['Motor enabled',r.motor_enabled],['Obstacle detected',r.obstacle_detected],['Reported battery',r.battery_pct==null?null:fmtNum(r.battery_pct)+'%']];$('roverTelemetry').innerHTML=`<div class="devices">${fields.map(([k,v])=>`<div class="device"><p style="margin:0 0 5px">${esc(k)}</p><strong>${esc(fmt(v))}</strong></div>`).join('')}</div><p class="freshness">Device timestamp: ${esc(fmtTime(r.timestamp))} · Received by bridge: ${esc(fmtTime(r.received_at))}</p>`;}
+function renderReports(rows){$('reportCount').textContent=`${rows.length} received`;if(!rows.length){$('reportsBody').innerHTML='<tr><td colspan="6"><div class="blank"><strong>No live inspection reports</strong><p>Only reports received from a connected device are shown.</p></div></td></tr>';return;}
+ $('reportsBody').innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.plant_id)}</strong><div class="tiny">${esc(r.report_id)}</div></td><td>${esc(fmtTime(r.timestamp))}</td><td>${esc(r.assessment.replaceAll('_',' '))}</td><td>${fmtNum(r.confidence_pct)}%</td><td>${r.image_quality_passed?'PASS':'FAIL'}</td><td>${esc(r.model_version)}</td></tr>`).join('');}
+function renderEvents(rows){$('eventCount').textContent=`${rows.length} events`;if(!rows.length){$('eventsList').innerHTML='<div class="blank"><strong>No live events received</strong><p>The log is empty until a real device message arrives.</p></div>';return;}$('eventsList').innerHTML=rows.map(e=>`<article class="event ${e.severity==='critical'?'critical':e.severity==='warning'?'warning':''}"><time>${esc(fmtTime(e.timestamp))}</time><div><strong>${esc(e.component)} · ${esc(e.event_type)}</strong><p>${esc(JSON.stringify(e.details||{}))}</p></div></article>`).join('');}
+
+async function refresh(){try{const response=await fetch('/api/snapshot',{cache:'no-store'});if(!response.ok)throw new Error('HTTP '+response.status);const s=await response.json();const hasLive=s.status==='LIVE';$('statusLabel').textContent=hasLive?'LIVE DATA RECEIVED':'WAITING FOR LIVE DATA';$('statusDot').style.background=hasLive?'var(--green)':'var(--amber)';$('bannerTitle').textContent=hasLive?'Receiving live device data':'No live device data received';$('bannerText').textContent=hasLive?'The dashboard is displaying only authenticated device-bridge messages. Stale sensor readings and stale rover telemetry are excluded from current values.':'No physical hardware or authenticated device bridge is connected. Live measurements, inspections and telemetry remain empty until genuine device packets arrive. No sample values are displayed.';$('onlineDevices').textContent=String(s.device_summary.online);$('deviceSummary').textContent=`${s.device_summary.known} authenticated device(s) discovered`;$('sensorNodes').textContent=String(s.device_summary.live_sensor_nodes);$('sensorSummary').textContent=s.device_summary.stale_sensor_nodes?`${s.device_summary.stale_sensor_nodes} stale node(s) hidden`:'Fresh sensor packets only';$('inspectionCount').textContent=String(s.inspections.length);$('inspectionSummary').textContent=s.inspections.length?'Latest device-reported reports':'No inspection report received';$('ingestionStatus').textContent=s.ingestion_enabled?'Authenticated live bridge ingestion is enabled.':'Set ROVER_INGEST_TOKEN (16+ characters) before accepting device messages.';$('ingestionBadge').textContent=s.ingestion_enabled?'ENABLED':'DISABLED';$('ingestionBadge').className='state '+(s.ingestion_enabled?'online':'');renderDevices(s.devices);renderLinks(s.links);renderReadings(s.sensor_readings);renderRover(s.rover_telemetry);renderReports(s.inspections);renderEvents(s.events);$('lastRefresh').textContent='Last checked '+fmtTime(s.generated_at);}catch(e){$('statusLabel').textContent='SERVER UNAVAILABLE';$('statusDot').style.background='var(--red)';$('bannerTitle').textContent='Live monitor backend unavailable';$('bannerText').textContent='No telemetry is being shown because the local live-monitor API could not be reached. '+e.message;$('lastRefresh').textContent='Status check failed';}}
+$('refreshBtn').addEventListener('click',refresh);refresh();setInterval(refresh,2000);
+
+// Manual Leaf Inspection Logic
+let selectedFile = null;
+
+async function loadModelInfo(){
+  try{
+    const res = await fetch('/api/inspect/model');
+    if(!res.ok) return;
+    const m = await res.json();
+    $('modelStatusBadge').textContent = m.model_ready ? `Model ready (${m.backend})` : 'Model not ready';
+    $('modelStatusBadge').className = 'count ' + (m.model_ready ? 'good-text' : 'warn-text');
+    if(m.classes && m.classes.length){
+      $('classList').innerHTML = m.classes.map(c=>`<div style="background:#09121e;padding:6px 8px;border-radius:6px;border:1px solid #1a283b">🌱 ${esc(c)}</div>`).join('');
+    }
+  }catch(e){
+    $('modelStatusBadge').textContent = 'Model info unavailable';
+  }
+}
+
+async function loadManualHistory(){
+  try{
+    const res = await fetch('/api/inspect/history');
+    if(!res.ok) return;
+    const rows = await res.json();
+    $('manualHistoryCount').textContent = `${rows.length} inspections`;
+    if(!rows.length){
+      $('manualHistoryBody').innerHTML = '<tr><td colspan="7"><div class="blank"><strong>No manual inspections performed yet</strong><p>Upload a photograph above to generate your first assessment.</p></div></td></tr>';
+      return;
+    }
+    $('manualHistoryBody').innerHTML = rows.map(r=>`<tr><td><strong>${esc(r.inspection_id)}</strong></td><td>${esc(fmtTime(r.timestamp))}</td><td>${esc(r.filename)}</td><td><strong>${esc(r.predicted_condition||'—')}</strong></td><td>${r.confidence_pct?r.confidence_pct+'%':'—'}</td><td>${statusPill(r.status)}</td><td>${r.quality_checks&&r.quality_checks.sharpness_score!=null?r.quality_checks.sharpness_score:'—'}</td></tr>`).join('');
+  }catch(e){}
+}
+
+const leafInput = $('leafInput');
+const dropArea = $('dropArea');
+
+['dragenter','dragover'].forEach(name=>{
+  dropArea.addEventListener(name, e=>{e.preventDefault();dropArea.classList.add('dragover');});
+});
+['dragleave','drop'].forEach(name=>{
+  dropArea.addEventListener(name, e=>{e.preventDefault();dropArea.classList.remove('dragover');});
+});
+dropArea.addEventListener('drop', e=>{
+  if(e.dataTransfer.files && e.dataTransfer.files[0]){
+    handleFileSelect(e.dataTransfer.files[0]);
+  }
+});
+leafInput.addEventListener('change', e=>{
+  if(e.target.files && e.target.files[0]){
+    handleFileSelect(e.target.files[0]);
+  }
+});
+
+function handleFileSelect(file){
+  selectedFile = file;
+  $('previewFileName').textContent = file.name;
+  $('previewFileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  const reader = new FileReader();
+  reader.onload = e => {
+    $('previewImg').src = e.target.result;
+    $('previewBox').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function loadSampleLeaf(url, filename){
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+    handleFileSelect(file);
+  } catch (err) {
+    console.error('Failed to load sample leaf:', err);
+  }
+}
+
+$('btnSampleYellowCurl').addEventListener('click', (e) => {
+  e.stopPropagation();
+  loadSampleLeaf('/static/samples/sample_yellow_leaf_curl.jpg', 'sample_yellow_leaf_curl.jpg');
+});
+$('btnSampleSeptoria').addEventListener('click', (e) => {
+  e.stopPropagation();
+  loadSampleLeaf('/static/samples/sample_septoria_leaf_spot.jpg', 'sample_septoria_leaf_spot.jpg');
+});
+$('btnSampleHealthy').addEventListener('click', (e) => {
+  e.stopPropagation();
+  loadSampleLeaf('/static/samples/sample_healthy.jpg', 'sample_healthy_leaf.jpg');
+});
+
+$('clearBtn').addEventListener('click', ()=>{
+  selectedFile = null;
+  leafInput.value = '';
+  $('previewBox').style.display = 'none';
+  $('qualityCard').style.display = 'none';
+  $('resultBody').innerHTML = '<div class="blank"><div class="icon">🔍</div><strong>No image analyzed yet</strong><p>Select a tomato leaf photo on the left and click "Analyze leaf condition" to inspect.</p></div>';
+  $('assessmentStatusBadge').textContent = 'AWAITING IMAGE';
+  $('assessmentStatusBadge').className = 'state';
+});
+
+$('analyzeBtn').addEventListener('click', async ()=>{
+  if(!selectedFile) return;
+  $('analyzeBtn').disabled = true;
+  $('analyzeBtn').textContent = '⏳ Evaluating...';
+
+  try{
+    const fd = new FormData();
+    fd.append('image', selectedFile, selectedFile.name);
+    const res = await fetch('/api/inspect/analyze', { method: 'POST', body: fd });
+    const data = await res.json();
+    renderInspectionResult(data);
+    loadManualHistory();
+  }catch(e){
+    $('resultBody').innerHTML = `<div class="blank"><strong style="color:var(--red)">Analysis request failed</strong><p>${esc(e.message)}</p></div>`;
+    $('assessmentStatusBadge').textContent = 'ERROR';
+    $('assessmentStatusBadge').className = 'state critical';
+  }finally{
+    $('analyzeBtn').disabled = false;
+    $('analyzeBtn').textContent = '🔬 Analyze leaf condition';
+  }
+});
+
+function renderInspectionResult(res){
+  const q = res.quality_checks || {};
+  $('qualityCard').style.display = 'block';
+  $('gateDim').textContent = q.dimensions || '—';
+  $('gateSharp').textContent = q.sharpness_score != null ? `${q.sharpness_score} (${q.is_blurry?'Blurry':'Sharp'})` : '—';
+  $('gateSharp').style.color = q.is_blurry ? 'var(--red)' : 'var(--green)';
+  $('gateExp').textContent = q.mean_brightness != null ? `${q.mean_brightness} (${q.is_underexposed?'Dark':q.is_overexposed?'Bright':'Good'})` : '—';
+  $('gateExp').style.color = (q.is_underexposed||q.is_overexposed) ? 'var(--amber)' : 'var(--green)';
+
+  const isAssessed = res.status === 'ASSESSED';
+  const isUncertain = res.status === 'UNCERTAIN';
+  const isUnsupported = res.status === 'UNSUPPORTED_CONDITION';
+
+  $('assessmentStatusBadge').textContent = res.status.replaceAll('_', ' ');
+  $('assessmentStatusBadge').className = 'state ' + (isAssessed ? 'online' : (isUncertain || isUnsupported) ? 'uncertain' : 'critical');
+
+  let titleColor = isAssessed ? 'var(--green)' : isUnsupported ? 'var(--cyan)' : isUncertain ? 'var(--amber)' : 'var(--red)';
+  let confColor = isAssessed ? 'var(--green)' : 'var(--amber)';
+
+  let bannerHtml = '';
+  if (isUnsupported) {
+    bannerHtml = `
+      <div style="background:#131d2a;border:1px solid #1f3b58;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">🔍</span>
+          <div>
+            <strong style="color:var(--cyan);font-size:12px;display:block">Unsupported / Out-of-Distribution Pathology</strong>
+            <p style="margin:4px 0 0;font-size:11px;color:#c0d5ec;line-height:1.4">This condition is outside the model's 10 trained classes. The application identifies visual symptoms directly rather than forcing a misclassification into an unrelated training disease.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (isUncertain) {
+    bannerHtml = `
+      <div style="background:#1c170a;border:1px solid #4a3b18;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">⚠️</span>
+          <div>
+            <strong style="color:var(--amber);font-size:12px;display:block">Inconclusive Visual Evidence</strong>
+            <p style="margin:4px 0 0;font-size:11px;color:#e8d19e;line-height:1.4">Confidence is insufficient to establish a definitive disease finding. Visual symptoms overlap across multiple disease classes. Do not apply chemical treatments without agronomic verification.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  let html = `
+    ${bannerHtml}
+    <div style="background:#09121e;border:1px solid #1c2b3e;border-radius:12px;padding:15px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <span style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em">Predicted Condition</span>
+          <h3 style="font-size:18px;margin:3px 0 0;color:${titleColor}">${esc(res.predicted_condition||'Undetermined')}</h3>
+        </div>
+        <div style="text-align:right">
+          <span style="font-size:11px;color:var(--muted)">Model Confidence</span>
+          <div style="font-size:${isUncertain ? '13px' : '20px'};font-weight:800;color:${isUnsupported ? 'var(--cyan)' : confColor};line-height:1.2">
+            ${isUnsupported ? 'N/A' : (isUncertain ? 'Unavailable (uncertain assessment)' : (res.confidence_pct != null ? `${res.confidence_pct}%` : '—'))}
+          </div>
+        </div>
+      </div>
+      ${isAssessed && res.confidence_pct != null ? `
+        <div class="progress-bar"><div class="progress-fill" style="width:${res.confidence_pct}%;background:${confColor}"></div></div>
+        <small style="font-size:10px;color:var(--muted)">Softmax prediction score · Not an absolute probability or laboratory diagnosis.</small>
+      ` : `
+        <div style="margin-top:6px;padding:6px 10px;background:#101a26;border-radius:6px;border:1px solid #1c2e42">
+          <small style="font-size:10px;color:#a0b8d0">${isUnsupported ? 'Confidence is N/A: condition is outside the model\'s supported domain.' : 'Confidence is unavailable: visual evidence is inconclusive or overlapping across lookalike conditions.'}</small>
+        </div>
+      `}
+    </div>
+  `;
+
+  if(res.other_possible_conditions && res.other_possible_conditions.length){
+    html += `
+      <div style="margin-bottom:12px">
+        <strong style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px">${(isUnsupported || isUncertain) ? 'Possible visual lookalikes considered:' : 'Other plausible conditions considered:'}</strong>
+        ${res.other_possible_conditions.map(c=>{
+          const hasProb = (c.probability_pct != null && c.probability_pct > 0);
+          return `
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:5px 0;border-bottom:1px solid #142132">
+            <span>${esc(c.condition)}</span>
+            <span style="font-weight:700;color:#9eb5cc">${hasProb ? `${c.probability_pct}%` : 'Visual lookalike'}</span>
+          </div>
+        `;}).join('')}
+      </div>
+    `;
+  }
+
+  let actionBg = isUnsupported ? '#131d2a' : isUncertain ? '#1c170a' : '#131c12';
+  let actionBorder = isUnsupported ? '#1f3b58' : isUncertain ? '#4a3b18' : '#23472c';
+  let actionTitleColor = isUnsupported ? 'var(--cyan)' : isUncertain ? 'var(--amber)' : '#78df92';
+  let actionTextColor = isUnsupported ? '#c0d5ec' : isUncertain ? '#e8d19e' : '#c8ebd1';
+
+  html += `
+    <div style="background:${actionBg};border:1px solid ${actionBorder};border-radius:10px;padding:12px;margin-bottom:12px">
+      <strong style="color:${actionTitleColor};font-size:11px;display:block;margin-bottom:4px">Recommended agronomic action:</strong>
+      <p style="margin:0;font-size:11px;color:${actionTextColor};line-height:1.4">${esc(res.recommended_action)}</p>
+    </div>
+
+    <div style="font-size:10px;color:var(--muted);border-top:1px solid #1a283b;padding-top:10px">
+      <strong>Model:</strong> ${esc(res.model_info&&res.model_info.architecture||'MobileNetV2')} · <strong>Version:</strong> ${esc(res.model_info&&res.model_info.version||'1.0.0')}<br>
+      <strong>Inspection ID:</strong> ${esc(res.inspection_id)} · <strong>Timestamp:</strong> ${esc(fmtTime(res.timestamp))}
+    </div>
+  `;
+
+  $('resultBody').innerHTML = html;
+}
+</script>
+</body></html>
