@@ -126,6 +126,16 @@
               </div>
             </div>
 
+            <div style="margin-top:10px;font-size:11px;color:var(--muted)">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="cropBoxToggle"> Manual Leaf ROI Crop (fallback)
+              </label>
+              <div id="cropBoxWrap" style="display:none;margin-top:6px">
+                <input type="text" id="cropBoxInput" placeholder="x1, y1, x2, y2 (e.g. 0, 0, 700, 700)" style="width:100%;box-sizing:border-box;padding:6px 10px;background:#09121e;border:1px solid #1c2b3e;border-radius:6px;color:#fff;font-size:11px">
+                <small style="color:var(--muted);display:block;margin-top:3px">Specify pixel coordinates to isolate infected leaf tissue from fruit or background.</small>
+              </div>
+            </div>
+
             <div id="qualityCard" style="display:none;margin-top:14px">
               <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Image quality gate assessment:</div>
               <div class="gate-grid">
@@ -133,6 +143,7 @@
                 <div class="gate-item"><small>Sharpness</small><strong id="gateSharp">—</strong></div>
                 <div class="gate-item"><small>Exposure</small><strong id="gateExp">—</strong></div>
               </div>
+              <div id="gateCropNotice" style="display:none;margin-top:8px;padding:6px 10px;background:#0c1d2e;border:1px solid #1f3d5c;border-radius:6px;font-size:11px;color:var(--cyan)"></div>
             </div>
           </div>
         </section>
@@ -317,11 +328,19 @@ $('btnSampleHealthy').addEventListener('click', (e) => {
   loadSampleLeaf('/static/samples/sample_healthy.jpg', 'sample_healthy_leaf.jpg');
 });
 
+$('cropBoxToggle').addEventListener('change', (e)=>{
+  $('cropBoxWrap').style.display = e.target.checked ? 'block' : 'none';
+});
+
 $('clearBtn').addEventListener('click', ()=>{
   selectedFile = null;
   leafInput.value = '';
+  $('cropBoxInput').value = '';
+  $('cropBoxToggle').checked = false;
+  $('cropBoxWrap').style.display = 'none';
   $('previewBox').style.display = 'none';
   $('qualityCard').style.display = 'none';
+  $('gateCropNotice').style.display = 'none';
   $('resultBody').innerHTML = '<div class="blank"><div class="icon">🔍</div><strong>No image analyzed yet</strong><p>Select a tomato leaf photo on the left and click "Analyze leaf condition" to inspect.</p></div>';
   $('assessmentStatusBadge').textContent = 'AWAITING IMAGE';
   $('assessmentStatusBadge').className = 'state';
@@ -331,6 +350,9 @@ $('analyzeBtn').addEventListener('click', async ()=>{
   if(!selectedFile) return;
   $('analyzeBtn').disabled = true;
   $('analyzeBtn').textContent = '⏳ Evaluating...';
+  // Ensure previous quality checks and results are cleared immediately
+  $('qualityCard').style.display = 'none';
+  $('gateCropNotice').style.display = 'none';
   $('resultBody').innerHTML = '<div class="blank"><div class="icon">⏳</div><strong>Evaluating leaf photograph...</strong><p>Performing quality checks and neural network inference.</p></div>';
   $('assessmentStatusBadge').textContent = 'EVALUATING';
   $('assessmentStatusBadge').className = 'state';
@@ -338,11 +360,16 @@ $('analyzeBtn').addEventListener('click', async ()=>{
   try{
     const fd = new FormData();
     fd.append('image', selectedFile, selectedFile.name);
+    if($('cropBoxToggle').checked && $('cropBoxInput').value.trim()){
+      fd.append('crop_box', $('cropBoxInput').value.trim());
+    }
     const res = await fetch('/api/inspect/analyze', { method: 'POST', body: fd });
     const data = await res.json();
     renderInspectionResult(data);
     loadManualHistory();
   }catch(e){
+    $('qualityCard').style.display = 'none';
+    $('gateCropNotice').style.display = 'none';
     $('resultBody').innerHTML = `<div class="blank"><strong style="color:var(--red)">Analysis request failed</strong><p>${esc(e.message)}</p></div>`;
     $('assessmentStatusBadge').textContent = 'ERROR';
     $('assessmentStatusBadge').className = 'state critical';
@@ -355,11 +382,22 @@ $('analyzeBtn').addEventListener('click', async ()=>{
 function renderInspectionResult(res){
   const q = res.quality_checks || {};
   $('qualityCard').style.display = 'block';
-  $('gateDim').textContent = q.dimensions || '—';
+  let dimText = q.original_dimensions || q.dimensions || '—';
+  if (q.is_downsampled && q.inference_dimensions) {
+    dimText += ` (Inference: ${q.inference_dimensions})`;
+  }
+  $('gateDim').textContent = dimText;
   $('gateSharp').textContent = q.sharpness_score != null ? `${q.sharpness_score} (${q.is_blurry?'Blurry':'Sharp'})` : '—';
   $('gateSharp').style.color = q.is_blurry ? 'var(--red)' : 'var(--green)';
   $('gateExp').textContent = q.mean_brightness != null ? `${q.mean_brightness} (${q.is_underexposed?'Dark':q.is_overexposed?'Bright':'Good'})` : '—';
   $('gateExp').style.color = (q.is_underexposed||q.is_overexposed) ? 'var(--amber)' : 'var(--green)';
+
+  if (q.foliar_crop_applied) {
+    $('gateCropNotice').style.display = 'block';
+    $('gateCropNotice').textContent = `🌾 Foliar leaf region isolated from mixed canopy [${q.foliar_crop_box ? q.foliar_crop_box.join(', ') : 'auto'}]`;
+  } else {
+    $('gateCropNotice').style.display = 'none';
+  }
 
   const isAssessed = res.status === 'ASSESSED';
   const isUncertain = res.status === 'UNCERTAIN';

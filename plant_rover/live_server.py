@@ -200,19 +200,28 @@ class LiveOnlyRequestHandler(BaseHTTPRequestHandler):
         body_bytes = self.rfile.read(length)
         image_bytes = None
         filename = "upload.jpg"
+        crop_box = None
 
         if "multipart/form-data" in ctype:
             msg = email.message_from_bytes(b"Content-Type: " + ctype.encode("utf-8") + b"\r\n\r\n" + body_bytes)
             if msg.is_multipart():
                 for part in msg.get_payload():
+                    name = part.get_param("name", header="content-disposition")
                     fname = part.get_filename()
                     if fname:
                         image_bytes = part.get_payload(decode=True)
                         filename = fname
-                        break
                     elif part.get_content_type() and part.get_content_type().startswith("image/"):
                         image_bytes = part.get_payload(decode=True)
-                        break
+                    elif name == "crop_box":
+                        try:
+                            val = part.get_payload(decode=True).decode("utf-8").strip()
+                            if val:
+                                parsed = [int(x.strip()) for x in val.replace("[", "").replace("]", "").split(",") if x.strip()]
+                                if len(parsed) == 4:
+                                    crop_box = tuple(parsed)
+                        except Exception:
+                            crop_box = None
             else:
                 image_bytes = msg.get_payload(decode=True)
 
@@ -237,6 +246,11 @@ class LiveOnlyRequestHandler(BaseHTTPRequestHandler):
                 self._json({"status": "IMAGE_REJECTED", "error": "Invalid base64 encoding for image data"}, 400)
                 return
             filename = data.get("filename", "upload.jpg")
+            if "crop_box" in data and isinstance(data["crop_box"], (list, tuple)) and len(data["crop_box"]) == 4:
+                try:
+                    crop_box = tuple(int(x) for x in data["crop_box"])
+                except Exception:
+                    crop_box = None
 
         elif ctype.startswith("image/") or ctype == "application/octet-stream" or not ctype:
             image_bytes = body_bytes
@@ -253,11 +267,11 @@ class LiveOnlyRequestHandler(BaseHTTPRequestHandler):
         classifier = self.server.classifier
         # If model is not ready
         if not classifier.is_ready:
-            result = classifier.inspect_image(image_bytes, filename)
+            result = classifier.inspect_image(image_bytes, filename, crop_box=crop_box)
             self._json(result.to_dict(), 503)
             return
 
-        result = classifier.inspect_image(image_bytes, filename)
+        result = classifier.inspect_image(image_bytes, filename, crop_box=crop_box)
 
         # Handle corrupt or unsupported format
         if result.status == "IMAGE_REJECTED":

@@ -1011,5 +1011,214 @@ class Section7AuditorRegressionTests(unittest.TestCase):
         self.assertIn("Independent Evaluation Protocol", doc_text)
 
 
+
+class FieldEvaluationDefectRegressionTests(unittest.TestCase):
+    """Regression test suite for the three confirmed field evaluation defects:
+    1. Problem A: Neutral white/grey card backgrounds trigger false powdery mildew rejection.
+    2. Problem B: Whole-plant canopy photos containing fruit are rejected by the quality gate.
+    3. Problem C: High-resolution images (> 4096px) are rejected instead of safely downsampled.
+    """
+    def setUp(self):
+        self.classifier = PlantLeafClassifier()
+
+    def test_problem_a_white_card_background_does_not_trigger_false_powdery_mildew(self):
+        """White/light-grey mounting card pixels must be excluded from powdery mildew checks."""
+        # 1. Synthetic white-card mounted leaf with dark brown spots (Target Spot / Leaf Mold lookalike)
+        card_im = Image.new("RGB", (300, 300), (245, 245, 245))
+        draw = ImageDraw.Draw(card_im)
+        draw.ellipse((40, 40, 260, 260), fill=(55, 140, 50))  # Green leaf blade
+        for spot in [(80, 80), (120, 160), (180, 100), (200, 180)]:
+            draw.ellipse((spot[0], spot[1], spot[0] + 30, spot[1] + 30), fill=(80, 50, 30))
+        buf = io.BytesIO()
+        card_im.save(buf, format="JPEG")
+        res = self.classifier.inspect_image(buf.getvalue(), "card_leaf.jpg")
+        self.assertNotEqual(res.predicted_condition, "Unsupported Condition — Suspected Tomato Powdery Mildew (Oidium neolycopersici)")
+        self.assertNotEqual(res.condition_code, "unsupported_powdery_mildew")
+
+        # 2. Check actual evaluation assets with mounting cards if available on disk
+        target_spot_path = Path("/home/mano/Documents/Anveshion/field_evaluation/Corynespora_cassiicola_Ring-Spot_Symptoms_in_Tomato_Leaves.png")
+        if target_spot_path.exists():
+            res_ts = self.classifier.inspect_image(target_spot_path.read_bytes(), "target_spot_leaves.png")
+            self.assertNotEqual(res_ts.condition_code, "unsupported_powdery_mildew", "Target spot on card must not be falsely rejected as powdery mildew")
+
+        leaf_mold_path = Path("/home/mano/Documents/Anveshion/field_evaluation/Tomato_Leaf_Mold.jpg")
+        if leaf_mold_path.exists():
+            res_lm = self.classifier.inspect_image(leaf_mold_path.read_bytes(), "leaf_mold_wm.jpg")
+            self.assertNotEqual(res_lm.condition_code, "unsupported_powdery_mildew", "Leaf mold must not be falsely rejected as powdery mildew")
+
+        spider_mite_path = Path("/home/mano/Documents/Anveshion/web_test_images/spider_mite_clemson.jpg")
+        if spider_mite_path.exists():
+            res_sm = self.classifier.inspect_image(spider_mite_path.read_bytes(), "spider_mite_clemson.jpg")
+            self.assertNotEqual(res_sm.condition_code, "unsupported_powdery_mildew", "Spider mite on card must not be falsely rejected as powdery mildew")
+
+    def test_problem_a_genuine_powdery_mildew_is_reliably_detected(self):
+        """Genuine fungal bloom on leaf tissue must continue to be detected and rejected as unsupported."""
+        pm_rhs_path = Path("/home/mano/Documents/Anveshion/web_test_images/powdery_mildew_rhs.jpg")
+        if pm_rhs_path.exists():
+            res_pm = self.classifier.inspect_image(pm_rhs_path.read_bytes(), "powdery_mildew_rhs.jpg")
+            self.assertEqual(res_pm.status, "UNSUPPORTED_CONDITION")
+            self.assertEqual(res_pm.condition_code, "unsupported_powdery_mildew")
+            self.assertIn("Powdery Mildew", res_pm.predicted_condition)
+
+        pm_wm_path = Path("/home/mano/Documents/Anveshion/field_evaluation/Tomaten-Echter_Mehltau-JS-2.jpg")
+        if pm_wm_path.exists():
+            res_wm = self.classifier.inspect_image(pm_wm_path.read_bytes(), "Tomaten-Echter_Mehltau-JS-2.jpg")
+            self.assertEqual(res_wm.status, "UNSUPPORTED_CONDITION")
+            self.assertEqual(res_wm.condition_code, "unsupported_powdery_mildew")
+
+    def test_problem_a_glossy_leaf_specular_highlights_not_rejected_as_powdery_mildew(self):
+        """Healthy glossy leaves with bright sunlit specular reflections must not be rejected as powdery mildew."""
+        glossy_im = Image.new("RGB", (300, 300), (30, 30, 30))
+        draw = ImageDraw.Draw(glossy_im)
+        draw.ellipse((30, 30, 270, 270), fill=(40, 160, 45))
+        # Specular bright white highlights
+        for hl in [(100, 100), (160, 140)]:
+            draw.ellipse((hl[0], hl[1], hl[0] + 25, hl[1] + 15), fill=(240, 250, 245))
+        buf = io.BytesIO()
+        glossy_im.save(buf, format="JPEG")
+        res = self.classifier.inspect_image(buf.getvalue(), "glossy_leaf.jpg")
+        self.assertNotEqual(res.condition_code, "unsupported_powdery_mildew")
+
+    def test_problem_b_mixed_canopy_with_fruit_passes_quality_gate(self):
+        """Photographs containing tomato fruit alongside foliage pass quality gate and isolate foliar region."""
+        # 1. Synthetic mixed canopy image with red tomato fruit and green leaves
+        mixed_im = Image.new("RGB", (400, 400), (40, 40, 40))
+        draw = ImageDraw.Draw(mixed_im)
+        # Red fruit occupying left ~30%
+        draw.ellipse((20, 50, 180, 350), fill=(210, 40, 35))
+        # Green foliage occupying right ~50%
+        draw.ellipse((160, 60, 380, 340), fill=(45, 145, 50))
+        buf = io.BytesIO()
+        mixed_im.save(buf, format="JPEG")
+
+        quality, rgb_im = self.classifier.evaluate_quality_gate(buf.getvalue())
+        self.assertTrue(quality.passed, f"Quality gate failed: {quality.rejection_reason}")
+        self.assertIsNone(quality.rejection_reason)
+        self.assertTrue(quality.foliar_crop_applied, "Foliar crop should be applied to isolate leaf from fruit")
+        self.assertIsNotNone(quality.foliar_crop_box)
+
+        # 2. Check field assets with fruit if available
+        lb_real_path = Path("/home/mano/Documents/Anveshion/web_test_images/late_blight_real.jpg")
+        if lb_real_path.exists():
+            q_real, _ = self.classifier.evaluate_quality_gate(lb_real_path.read_bytes())
+            self.assertTrue(q_real.passed, "late_blight_real.jpg with fruit must pass quality gate")
+            self.assertTrue(q_real.foliar_crop_applied)
+            res_lb = self.classifier.inspect_image(lb_real_path.read_bytes(), "late_blight_real.jpg")
+            self.assertNotEqual(res_lb.status, "IMAGE_REJECTED")
+
+        lb_wm2_path = Path("/home/mano/Documents/Anveshion/field_evaluation/Tomato_with_Phytophthora_infestans_(late_blight)_2.jpg")
+        if lb_wm2_path.exists():
+            q_wm2, _ = self.classifier.evaluate_quality_gate(lb_wm2_path.read_bytes())
+            self.assertTrue(q_wm2.passed, "Tomato_with_Phytophthora_infestans_2 with fruit must pass quality gate")
+            self.assertTrue(q_wm2.foliar_crop_applied)
+            res_wm2 = self.classifier.inspect_image(lb_wm2_path.read_bytes(), "late_blight_wm2.jpg")
+            self.assertNotEqual(res_wm2.status, "IMAGE_REJECTED")
+
+    def test_problem_b_pure_fruit_remains_rejected(self):
+        """Photographs showing pure fruit with no foliage must continue to be rejected."""
+        fruit_path = Path("/home/mano/Documents/Anveshion/web_test_images/red_apple_fruit.jpg")
+        if fruit_path.exists():
+            q, _ = self.classifier.evaluate_quality_gate(fruit_path.read_bytes())
+            self.assertFalse(q.passed)
+            self.assertIn("fruit", (q.rejection_reason or "").lower())
+
+    def test_problem_b_manual_crop_box_overrides_automatic_framing(self):
+        """User-specified manual crop box [x1, y1, x2, y2] restricts inspection to target foliage."""
+        im = Image.new("RGB", (600, 600), (30, 30, 30))
+        draw = ImageDraw.Draw(im)
+        draw.ellipse((50, 50, 250, 250), fill=(50, 150, 50))  # leaf 1
+        draw.ellipse((350, 350, 550, 550), fill=(60, 160, 60))  # leaf 2
+        buf = io.BytesIO()
+        im.save(buf, format="JPEG")
+        data = buf.getvalue()
+
+        # Crop to upper-left quadrant
+        crop = (40, 40, 260, 260)
+        quality, rgb_im = self.classifier.evaluate_quality_gate(data, crop_box=crop)
+        self.assertTrue(quality.passed)
+        self.assertTrue(quality.foliar_crop_applied)
+        self.assertEqual(quality.foliar_crop_box, list(crop))
+        self.assertEqual(rgb_im.size, (220, 220))
+
+        res = self.classifier.inspect_image(data, filename="manual_crop.jpg", crop_box=crop)
+        self.assertEqual(res.quality_checks["foliar_crop_box"], list(crop))
+
+    def test_problem_c_high_resolution_image_downsampled_proportionally(self):
+        """High-resolution images (> 4096px) are validated, accepted, and downsampled to <= 2048px without distortion."""
+        # Create a 4800 x 3200 (aspect 1.5) test image
+        orig_w, orig_h = 4800, 3200
+        large_im = Image.new("RGB", (orig_w, orig_h), (20, 20, 20))
+        draw = ImageDraw.Draw(large_im)
+        draw.ellipse((800, 400, 4000, 2800), fill=(50, 150, 50))
+        buf = io.BytesIO()
+        large_im.save(buf, format="JPEG", quality=75)
+        data = buf.getvalue()
+
+        quality, rgb_im = self.classifier.evaluate_quality_gate(data)
+        self.assertTrue(quality.passed, f"Failed: {quality.rejection_reason}")
+        self.assertTrue(quality.is_downsampled)
+        self.assertEqual(quality.original_width, orig_w)
+        self.assertEqual(quality.original_height, orig_h)
+        self.assertLessEqual(quality.inference_width, 2048)
+        self.assertLessEqual(quality.inference_height, 2048)
+        self.assertEqual(rgb_im.size, (quality.inference_width, quality.inference_height))
+
+        # Check aspect ratio preservation: no stretching or distorting
+        orig_aspect = orig_w / orig_h
+        inf_aspect = quality.inference_width / quality.inference_height
+        self.assertAlmostEqual(orig_aspect, inf_aspect, delta=0.02)
+
+        # Full inspect_image check: original and inference dimensions recorded distinctly
+        res = self.classifier.inspect_image(data, filename="large_leaf.jpg")
+        self.assertTrue(res.quality_checks["passed"])
+        self.assertTrue(res.quality_checks["is_downsampled"])
+        self.assertEqual(res.quality_checks["original_dimensions"], f"{orig_w}x{orig_h}")
+        self.assertEqual(res.quality_checks["inference_dimensions"], f"{quality.inference_width}x{quality.inference_height}")
+
+    def test_problem_c_actual_field_photo_over_4096px_evaluates_successfully(self):
+        """Actual high-resolution field photograph (4624 x 3468) is accepted and downsampled."""
+        wm_path = Path("/home/mano/Documents/Anveshion/field_evaluation/Tomaten-Echter_Mehltau-JS-2.jpg")
+        if wm_path.exists():
+            data = wm_path.read_bytes()
+            quality, _ = self.classifier.evaluate_quality_gate(data)
+            self.assertTrue(quality.passed)
+            self.assertTrue(quality.is_downsampled)
+            self.assertEqual(quality.original_width, 4624)
+            self.assertEqual(quality.original_height, 3468)
+            self.assertLessEqual(quality.inference_width, 2048)
+            self.assertLessEqual(quality.inference_height, 2048)
+
+    def test_api_manual_inspection_accepts_crop_box(self):
+        """Live HTTP API accepts crop_box in JSON payload and multipart form data."""
+        hub = LiveDataHub()
+        server = LiveOnlyHTTPServer(("127.0.0.1", 0), hub, self.classifier)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        try:
+            im_bytes = create_test_image(300, 300)
+            payload = {
+                "image": base64.b64encode(im_bytes).decode(),
+                "filename": "crop_test.jpg",
+                "crop_box": [10, 10, 200, 200]
+            }
+            req = Request(
+                base + "/api/inspect/analyze",
+                data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urlopen(req, timeout=5) as r:
+                res = json.loads(r.read().decode())
+            self.assertEqual(r.status, 200)
+            self.assertTrue(res["quality_checks"]["foliar_crop_applied"])
+            self.assertEqual(res["quality_checks"]["foliar_crop_box"], [10, 10, 200, 200])
+        finally:
+            server.shutdown()
+            server.server_close()
+            t.join(timeout=2)
+
+
 if __name__ == "__main__":
     unittest.main()
+

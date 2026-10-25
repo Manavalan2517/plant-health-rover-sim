@@ -25,12 +25,13 @@ import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageStat
 
 # Security: Prevent decompression bomb attacks
-Image.MAX_IMAGE_PIXELS = 20_000_000
+Image.MAX_IMAGE_PIXELS = 50_000_000
 
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 MIN_DIMENSION = 64
-MAX_DIMENSION = 4096
+MAX_UPLOAD_DIMENSION = 8192
+MAX_INFERENCE_DIMENSION = 2048
 
 
 DEFAULT_DISPLAY_NAMES = {
@@ -72,6 +73,23 @@ class QualityGateResult:
     is_blurry: bool
     is_underexposed: bool
     is_overexposed: bool
+    original_width: int = 0
+    original_height: int = 0
+    inference_width: int = 0
+    inference_height: int = 0
+    is_downsampled: bool = False
+    foliar_crop_applied: bool = False
+    foliar_crop_box: Optional[list[int]] = None
+
+    def __post_init__(self) -> None:
+        if self.original_width == 0:
+            self.original_width = self.width
+        if self.original_height == 0:
+            self.original_height = self.height
+        if self.inference_width == 0:
+            self.inference_width = self.width
+        if self.inference_height == 0:
+            self.inference_height = self.height
 
 
 @dataclass
@@ -195,8 +213,16 @@ class PlantLeafClassifier:
             }),
         }
 
-    def evaluate_quality_gate(self, image_bytes: bytes) -> tuple[QualityGateResult, Optional[Image.Image]]:
-        """Validate format, dimensions, corruption, blur, and exposure."""
+    def evaluate_quality_gate(
+        self,
+        image_bytes: bytes,
+        crop_box: Optional[tuple[int, int, int, int]] = None,
+    ) -> tuple[QualityGateResult, Optional[Image.Image]]:
+        """Validate format, dimensions, corruption, blur, and exposure.
+
+        Applies EXIF normalization, proportional downsampling for high-resolution images,
+        and automatic or manual foliar-region selection for canopy images with fruit.
+        """
         if len(image_bytes) > MAX_FILE_SIZE_BYTES:
             return QualityGateResult(
                 passed=False,
@@ -206,7 +232,7 @@ class PlantLeafClassifier:
             ), None
 
         try:
-            # First pass: check validity without decompressing full image
+            # First pass: check format and basic dimensions without full decompression
             with Image.open(io.BytesIO(image_bytes)) as test_im:
                 fmt = (test_im.format or "").upper()
                 if fmt not in ALLOWED_FORMATS:
@@ -226,16 +252,16 @@ class PlantLeafClassifier:
                         blur_variance=0.0, mean_luminance=0.0,
                         is_blurry=False, is_underexposed=False, is_overexposed=False,
                     ), None
-                if w > MAX_DIMENSION or h > MAX_DIMENSION:
+                if w > MAX_UPLOAD_DIMENSION or h > MAX_UPLOAD_DIMENSION:
                     return QualityGateResult(
                         passed=False,
-                        rejection_reason=f"Image resolution {w}x{h} exceeds maximum allowed {MAX_DIMENSION}x{MAX_DIMENSION} pixels.",
+                        rejection_reason=f"Image resolution {w}x{h} exceeds maximum allowed {MAX_UPLOAD_DIMENSION}x{MAX_UPLOAD_DIMENSION} pixels.",
                         width=w, height=h, format=fmt,
                         blur_variance=0.0, mean_luminance=0.0,
                         is_blurry=False, is_underexposed=False, is_overexposed=False,
                     ), None
 
-            # Second pass: decode and apply EXIF orientation
+            # Second pass: decode, apply EXIF orientation, and convert to RGB
             full_im = Image.open(io.BytesIO(image_bytes))
             full_im.load()
             try:
@@ -243,9 +269,35 @@ class PlantLeafClassifier:
             except Exception:
                 pass
             rgb_im = full_im.convert("RGB")
-            w, h = rgb_im.size
+            orig_w, orig_h = rgb_im.size
 
-            # Blur analysis via Laplacian filter on 256x256 grayscale thumbnail (crop borders to avoid convolution padding artifacts)
+            # Proportional downsampling for high-resolution images (> MAX_INFERENCE_DIMENSION)
+            # Preserves original aspect ratio without distortion or stretching
+            is_downsampled = False
+            if max(orig_w, orig_h) > MAX_INFERENCE_DIMENSION:
+                scale = MAX_INFERENCE_DIMENSION / float(max(orig_w, orig_h))
+                new_w = max(MIN_DIMENSION, int(round(orig_w * scale)))
+                new_h = max(MIN_DIMENSION, int(round(orig_h * scale)))
+                rgb_im = rgb_im.resize((new_w, new_h), Image.Resampling.BILINEAR)
+                is_downsampled = True
+
+            inf_w, inf_h = rgb_im.size
+
+            # Manual foliar ROI crop option (if specified)
+            foliar_crop_applied = False
+            foliar_crop_box: Optional[list[int]] = None
+            if crop_box is not None and len(crop_box) == 4:
+                cx1, cy1, cx2, cy2 = [int(v) for v in crop_box]
+                cx1 = max(0, min(inf_w - MIN_DIMENSION, cx1))
+                cy1 = max(0, min(inf_h - MIN_DIMENSION, cy1))
+                cx2 = max(cx1 + MIN_DIMENSION, min(inf_w, cx2))
+                cy2 = max(cy1 + MIN_DIMENSION, min(inf_h, cy2))
+                rgb_im = rgb_im.crop((cx1, cy1, cx2, cy2))
+                foliar_crop_applied = True
+                foliar_crop_box = [cx1, cy1, cx2, cy2]
+                inf_w, inf_h = rgb_im.size
+
+            # Blur analysis via Laplacian filter on 256x256 grayscale thumbnail
             gray = rgb_im.convert("L").resize((256, 256), Image.Resampling.BILINEAR)
             laplacian = gray.filter(ImageFilter.Kernel((3, 3), [0, 1, 0, 1, -4, 1, 0, 1, 0], scale=1, offset=128))
             blur_var = float(ImageStat.Stat(laplacian.crop((2, 2, 254, 254))).var[0])
@@ -256,17 +308,51 @@ class PlantLeafClassifier:
             is_underexposed = mean_lum < 25.0
             is_overexposed = mean_lum > 235.0
 
-            # Foliage presence analysis: check for plant leaf tissue (reject non-leaf objects like coffee cups, desks, cars, fruits)
+            # Foliage presence & Fruit differentiation
             thumb = rgb_im.resize((128, 128), Image.Resampling.BILINEAR)
             t_arr = np.array(thumb, dtype=float)
             tr, tg, tb = t_arr[:, :, 0], t_arr[:, :, 1], t_arr[:, :, 2]
             is_green_leaf = (tg > 35) & (tg > tr * 1.04) & (tg > tb * 1.04)
             is_yellow_leaf = (tr > 60) & (tg > 60) & (tb < tr * 0.75) & (tb < tg * 0.75)
             is_red_fruit = (tr > 130) & (tr > tg * 1.35) & (tr > tb * 1.35)
+
+            green_ratio = float(np.mean(is_green_leaf))
             foliage_ratio = float(np.mean(is_green_leaf | is_yellow_leaf))
             red_fruit_ratio = float(np.mean(is_red_fruit))
+
+            # Non-foliage rejection (e.g. ceramic cup, keyboard)
             is_non_foliage = foliage_ratio < 0.04
-            is_fruit = red_fruit_ratio > 0.20
+
+            # Pure fruit rejection: only reject if red fruit dominates and foliage is negligible
+            is_fruit = (red_fruit_ratio > 0.40) and (green_ratio < 0.02)
+
+            # Automatic foliar region selection when fruit is present in a mixed canopy photograph
+            if not is_fruit and not is_non_foliage and red_fruit_ratio > 0.15 and not foliar_crop_applied:
+                arr_inf = np.array(rgb_im, dtype=float)
+                r_inf, g_inf, b_inf = arr_inf[:, :, 0], arr_inf[:, :, 1], arr_inf[:, :, 2]
+                rf_mask = (r_inf > 130) & (r_inf > g_inf * 1.35) & (r_inf > b_inf * 1.35)
+                lum_inf = 0.299 * r_inf + 0.587 * g_inf + 0.114 * b_inf
+                fol_mask = ~rf_mask & (lum_inf > 20) & (lum_inf < 180) & (g_inf > b_inf * 0.88) & (r_inf > b_inf * 0.85)
+
+                from scipy import ndimage as ndi
+                lbl, n = ndi.label(fol_mask)
+                if n > 0:
+                    sizes = ndi.sum(fol_mask, lbl, range(1, n + 1))
+                    max_label = int(np.argmax(sizes)) + 1
+                    max_cluster_size = sizes[max_label - 1]
+                    if max_cluster_size / float(inf_w * inf_h) >= 0.15:
+                        rows, cols = np.where(lbl == max_label)
+                        pad_x = int((np.max(cols) - np.min(cols)) * 0.05)
+                        pad_y = int((np.max(rows) - np.min(rows)) * 0.05)
+                        min_x = max(0, int(np.min(cols)) - pad_x)
+                        max_x = min(inf_w, int(np.max(cols)) + pad_x + 1)
+                        min_y = max(0, int(np.min(rows)) - pad_y)
+                        max_y = min(inf_h, int(np.max(rows)) + pad_y + 1)
+                        if (max_x - min_x) >= MIN_DIMENSION and (max_y - min_y) >= MIN_DIMENSION:
+                            rgb_im = rgb_im.crop((min_x, min_y, max_x, max_y))
+                            foliar_crop_applied = True
+                            foliar_crop_box = [min_x, min_y, max_x, max_y]
+                            inf_w, inf_h = rgb_im.size
 
             rejection_reason = None
             if is_blurry:
@@ -284,12 +370,19 @@ class PlantLeafClassifier:
             return QualityGateResult(
                 passed=passed,
                 rejection_reason=rejection_reason,
-                width=w, height=h, format=fmt,
+                width=orig_w, height=orig_h, format=fmt,
                 blur_variance=round(blur_var, 2),
                 mean_luminance=round(mean_lum, 2),
                 is_blurry=is_blurry,
                 is_underexposed=is_underexposed,
                 is_overexposed=is_overexposed,
+                original_width=orig_w,
+                original_height=orig_h,
+                inference_width=inf_w,
+                inference_height=inf_h,
+                is_downsampled=is_downsampled,
+                foliar_crop_applied=foliar_crop_applied,
+                foliar_crop_box=foliar_crop_box,
             ), rgb_im
 
         except Exception as exc:
@@ -360,17 +453,49 @@ class PlantLeafClassifier:
         green_blade_pct = np.sum(green_blade) / total_px * 100
 
         # 1. White/pale-gray powdery fungal mycelium check (Tomato Powdery Mildew - Oidium neolycopersici / Leveillula taurica)
-        diff = np.maximum(np.maximum(r, g), b) - np.minimum(np.minimum(r, g), b)
-        is_powder = (r > 120) & (g > 130) & (b > 110) & (diff < 28) & (g < 235)
+        max_c = np.maximum(np.maximum(r, g), b)
+        min_c = np.minimum(np.minimum(r, g), b)
+        sat = (max_c - min_c) / (max_c + 1e-6)
+        diff = max_c - min_c
+
+        # Neutral or cool background card segmentation: exclude unpainted card, slate, or mounting surfaces
+        is_neutral_or_cool_card = (sat < 0.06) | ((b >= g) & (g > 100) & (diff < 25))
+
+        # Powdery mildew check: genuine fungal bloom on leaf tissue
+        is_powder = (
+            (r > 120) & (g > 130) & (b > 110)
+            & (diff < 26) & (g < 235)
+            & (g >= b * 0.98)
+            & (g >= r * 0.98)
+            & ~is_neutral_or_cool_card
+        )
+
         border_mask = np.zeros(arr.shape[:2], dtype=bool)
         border_mask[:4, :] = True
         border_mask[-4:, :] = True
         border_mask[:, :4] = True
         border_mask[:, -4:] = True
-        border_powder = np.mean(is_powder[border_mask])
-        powder_ratio = np.sum(is_powder & ~border_mask) / foliage_count
+        border_powder = float(np.mean(is_powder[border_mask]))
+        interior_powder = is_powder & ~border_mask
 
-        if border_powder < 0.15 and powder_ratio > 0.035 and (top_prob < 0.85 or entropy > 0.40 or max_sim < 0.70):
+        from scipy import ndimage as ndi
+        lbl, n = ndi.label(interior_powder)
+        if n > 0:
+            sizes = ndi.sum(interior_powder, lbl, range(1, n + 1))
+            max_cluster = float(np.max(sizes))
+        else:
+            max_cluster = 0.0
+
+        powder_ratio = float(np.sum(interior_powder)) / foliage_count
+        cluster_ratio = max_cluster / foliage_count
+
+        is_powdery_mildew_bloom = (
+            (border_powder < 0.15)
+            and (powder_ratio > 0.045)
+            and (cluster_ratio >= 0.018 or powder_ratio > 0.12)
+        )
+
+        if is_powdery_mildew_bloom and (top_prob < 0.85 or entropy > 0.40 or max_sim < 0.70):
             if top_name in (
                 "Tomato Early Blight",
                 "Tomato Late Blight",
@@ -500,7 +625,12 @@ class PlantLeafClassifier:
 
         return None
 
-    def inspect_image(self, image_bytes: bytes, filename: str = "upload.jpg") -> ManualInspectionResult:
+    def inspect_image(
+        self,
+        image_bytes: bytes,
+        filename: str = "upload.jpg",
+        crop_box: Optional[tuple[int, int, int, int]] = None,
+    ) -> ManualInspectionResult:
         """Complete workflow: validation, quality gate, preprocessing, inference, and uncertainty."""
         now_iso = datetime.now(timezone.utc).isoformat()
         sha = hashlib.sha256(image_bytes).hexdigest()
@@ -510,11 +640,16 @@ class PlantLeafClassifier:
         model_info = self.get_model_info()
 
         # Step 1: Quality Gate
-        quality, rgb_im = self.evaluate_quality_gate(image_bytes)
+        quality, rgb_im = self.evaluate_quality_gate(image_bytes, crop_box=crop_box)
         quality_dict = {
             "passed": quality.passed,
             "rejection_reason": quality.rejection_reason,
             "dimensions": f"{quality.width}x{quality.height}" if quality.width else "unknown",
+            "original_dimensions": f"{quality.original_width}x{quality.original_height}" if quality.original_width else "unknown",
+            "inference_dimensions": f"{quality.inference_width}x{quality.inference_height}" if quality.inference_width else "unknown",
+            "is_downsampled": quality.is_downsampled,
+            "foliar_crop_applied": quality.foliar_crop_applied,
+            "foliar_crop_box": quality.foliar_crop_box,
             "format": quality.format,
             "sharpness_score": quality.blur_variance,
             "mean_brightness": quality.mean_luminance,
