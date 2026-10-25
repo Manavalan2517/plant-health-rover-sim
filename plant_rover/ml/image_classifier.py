@@ -391,9 +391,9 @@ class PlantLeafClassifier:
                     ),
                     "recommended_action": (
                         "Verify for Tomato Powdery Mildew with an agricultural extension officer or certified agronomist. "
-                        "Do NOT apply Early Blight treatments (copper or chlorothalonil). For suspected Powdery Mildew: "
-                        "improve greenhouse/canopy airflow, lower relative humidity, avoid overhead irrigation, and consider "
-                        "potassium bicarbonate, wettable sulfur, or biofungicides (Bacillus subtilis) after confirmation."
+                        "Do NOT apply Early Blight treatments (copper or chlorothalonil). For suspected Powdery Mildew, "
+                        "recommended cultural practices: improve greenhouse/canopy airflow, lower relative humidity, "
+                        "and avoid overhead irrigation. Do NOT apply unconfirmed chemical fungicides without specialist verification."
                     ),
                     "other_conditions": [],
                 }
@@ -423,8 +423,8 @@ class PlantLeafClassifier:
                     "recommended_action": (
                         "Confirm leafminer infestation with an agricultural extension entomologist or certified crop consultant. "
                         "Do NOT apply Late Blight fungicides. Recommended integrated pest management (IPM) measures include: "
-                        "placing yellow sticky cards for adult monitoring, preserving or releasing parasitic wasps (Diglyphus isaea), "
-                        "crushing larvae inside leaves manually in small plots, and applying targeted organic controls (azadirachtin or spinosad) if thresholds are exceeded."
+                        "placing yellow sticky cards for adult monitoring, preserving beneficial natural predators, "
+                        "and consulting an IPM specialist for threshold-based options. Do NOT apply unconfirmed chemical pesticides."
                     ),
                     "other_conditions": [],
                 }
@@ -490,10 +490,10 @@ class PlantLeafClassifier:
                     "and focal circular fungal lesions with concentric rings are absent. Do NOT apply {top_name} fungicides based on this visual screening."
                 ),
                 "recommended_action": (
-                    "Do NOT apply chemical fungicides or unverified fertilizers. Nutrient deficiencies cannot be definitively diagnosed "
-                    "from foliar photographs alone. Conduct a laboratory leaf-tissue analysis and soil pH/nutrient test to verify magnesium, "
-                    "potassium, and nitrogen levels. If magnesium deficiency is confirmed, an agronomist may recommend a foliar spray of "
-                    "dilute Epsom salts (magnesium sulfate, 10-20 g/L) or soil amendment with dolomitic limestone."
+                    "Do NOT apply chemical fungicides, fertilizers, or soil amendments based on image inspection alone. "
+                    "Visual foliar symptoms cannot definitively diagnose or differentiate specific nutrient disorders. "
+                    "Submit leaf-tissue and soil samples to an accredited agricultural diagnostic laboratory for definitive "
+                    "nutrient and pH testing before applying any corrective treatments."
                 ),
                 "other_conditions": [],
             }
