@@ -430,13 +430,16 @@ class PlantLeafClassifier:
                 }
 
         # 3. Nutrient Disorder (Interveinal Chlorosis / Magnesium Deficiency):
-        # Foliar blade displays diffuse interveinal yellowing with green veins and fine punctate flecks,
-        # without large circular or concentric target-like necrotic lesions.
-        # Avoid diagnosing magnesium deficiency solely from yellowing and brown lesions:
-        # Fungal leaf spot diseases (Early Blight, Target Spot) produce large concentric lesions with chlorotic halos.
-        # Magnesium deficiency produces diffuse interveinal yellowing with fine necrotic flecks (no large blight patches).
+        # Avoid diagnosing magnesium deficiency solely from yellowing and brown lesions.
+        # Fungal leaf spot diseases (Early Blight, Target Spot, Septoria Leaf Spot) and blights produce
+        # discrete circular/focal lesions with concentric zoning or chlorotic halos on predominantly green foliar tissue.
+        # Genuine magnesium deficiency causes diffuse interveinal yellowing across the leaf blade (green blade lost),
+        # while primary veins remain green, and necrotic symptoms are restricted to fine, diffuse punctate flecks
+        # without large circular, concentric, or target-board fungal lesions.
         is_chlorosis = foliage & (r > 120) & (g > 120) & (b < r * 0.75) & (b < g * 0.75)
         chlorosis_ratio = np.sum(is_chlorosis) / foliage_count
+
+        green_blade_foliage_ratio = np.sum(green_blade & foliage) / foliage_count
 
         is_necrotic = foliage & (lum < 95) & (r >= b * 0.85)
         necrotic_ratio = np.sum(is_necrotic) / foliage_count
@@ -453,13 +456,26 @@ class PlantLeafClassifier:
         except Exception:
             max_lesion_ratio = 0.0
 
-        has_large_blight_lesions = (max_lesion_ratio >= 0.08) or (necrotic_ratio >= 0.25)
+        # Leaf-spot and blight lesion morphology:
+        # Check whether visual evidence (lesion size, extensive necrosis, circular/focal spots with green blade)
+        # supports a fungal disease rather than physiological interveinal chlorosis.
+        has_leaf_spot_or_blight_morphology = (
+            (max_lesion_ratio >= 0.05)
+            or (necrotic_ratio >= 0.20)
+            or (green_blade_foliage_ratio >= 0.35 and necrotic_ratio >= 0.03)
+            or (num_lesions >= 8 and necrotic_ratio >= 0.03 and green_blade_foliage_ratio >= 0.35)
+        )
+
+        is_interveinal_chlorosis = (
+            chlorosis_ratio > 0.03
+            and green_blade_foliage_ratio < 0.35
+            and not has_leaf_spot_or_blight_morphology
+        )
 
         if (
-            top_name == "Tomato Septoria Leaf Spot"
+            top_name in ("Tomato Septoria Leaf Spot", "Tomato Early Blight", "Tomato Target Spot")
             and (0.50 <= sim_to_top < 0.60)
-            and chlorosis_ratio > 0.03
-            and not has_large_blight_lesions
+            and is_interveinal_chlorosis
         ):
             return {
                 "status": "UNSUPPORTED_CONDITION",
@@ -467,7 +483,7 @@ class PlantLeafClassifier:
                 "condition_code": "unsupported_nutrient_disorder",
                 "confidence_pct": None,
                 "explanation": (
-                    "Foliage displays pronounced interveinal chlorosis (yellowing between primary leaf veins while veins remain green) "
+                    "Foliage displays pronounced interveinal chlorosis (diffuse yellowing between primary leaf veins while veins remain green) "
                     "accompanied by fine diffuse necrotic flecking, characteristic of Magnesium Deficiency or related physiological nutrient disorders. "
                     "Nutrient disorders are outside the model's 10 trained disease classes. The model's closest raw mathematical match "
                     f"was {top_name} ({top_prob*100:.1f}%), but latent feature similarity to {top_name} is only {sim_to_top:.2f} (divergent) "

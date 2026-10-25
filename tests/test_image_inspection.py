@@ -261,6 +261,107 @@ class ClassifierInferenceTests(unittest.TestCase):
             self.assertIn("Yellow Leaf Curl", result.predicted_condition)
             self.assertGreaterEqual(result.confidence_pct, 80.0)
 
+    def test_independent_examples_evaluation_suite(self):
+        """Evaluates independent examples across magnesium deficiency, Early Blight, Target Spot, Septoria, and Healthy foliage."""
+        cases = [
+            # (path, expected_status_tuple, forbidden_condition_code, expected_condition_substr)
+            (
+                Path("/home/mano/Downloads/pub0006537_76781.webp"),
+                ("UNSUPPORTED_CONDITION",),
+                "Tomato_Septoria_leaf_spot",
+                "Magnesium Deficiency",
+            ),
+            (
+                Path("/home/mano/Documents/Anveshion/web_test_images/early_blight_wikimedia.jpg"),
+                ("ASSESSED", "UNCERTAIN"),
+                "unsupported_nutrient_disorder",
+                "Early Blight",
+            ),
+            (
+                Path("/home/mano/Documents/Anveshion/web_test_images/concentric_leaf_spot.jpg"),
+                ("UNCERTAIN", "ASSESSED"),
+                "unsupported_nutrient_disorder",
+                "Early Blight",
+            ),
+            (
+                Path("/home/mano/Documents/Anveshion/plant-health-rover-sim/plant_rover/static/samples/sample_septoria_leaf_spot.jpg"),
+                ("ASSESSED", "UNCERTAIN"),
+                "unsupported_nutrient_disorder",
+                "Septoria",
+            ),
+            (
+                Path("/home/mano/Documents/Anveshion/web_test_images/septoria_leaf_spot_real.jpg"),
+                ("ASSESSED", "UNCERTAIN"),
+                "unsupported_nutrient_disorder",
+                "Septoria",
+            ),
+            (
+                Path("/home/mano/Documents/Anveshion/plant-health-rover-sim/plant_rover/static/samples/sample_healthy.jpg"),
+                ("ASSESSED",),
+                "unsupported_nutrient_disorder",
+                "Healthy",
+            ),
+        ]
+
+        for p, allowed_statuses, forbidden_code, expected_substr in cases:
+            if not p.exists():
+                continue
+            res = self.classifier.inspect_image(p.read_bytes(), p.name)
+            self.assertIn(
+                res.status,
+                allowed_statuses,
+                f"{p.name} status {res.status} not in allowed {allowed_statuses}",
+            )
+            self.assertNotEqual(
+                res.condition_code,
+                forbidden_code,
+                f"{p.name} incorrectly assigned forbidden code {forbidden_code}",
+            )
+            self.assertIn(
+                expected_substr.lower(),
+                res.predicted_condition.lower(),
+                f"{p.name} predicted condition '{res.predicted_condition}' missing '{expected_substr}'",
+            )
+            # Suppress nutrient-specific recommendations for all non-nutrient predictions
+            if res.condition_code != "unsupported_nutrient_disorder":
+                self.assertNotIn("epsom", res.recommended_action.lower())
+                self.assertNotIn("magnesium sulfate", res.recommended_action.lower())
+                self.assertNotIn("dolomitic", res.recommended_action.lower())
+
+    def test_zero_false_nutrient_rejections_on_dataset_disease_cohort(self):
+        """Evaluates cohorts of Early Blight, Target Spot, Septoria, and Healthy images to verify 0 false nutrient rejections."""
+        base_dir = Path("/home/mano/Documents/Anveshion/dataset/augmented_dataset")
+        if not base_dir.exists():
+            return
+
+        cohorts = [
+            ("Tomato_Early_blight", 20),
+            ("Tomato__Target_Spot", 20),
+            ("Tomato_Septoria_leaf_spot", 20),
+            ("Tomato_healthy", 20),
+        ]
+
+        false_nutrient_rejections = 0
+        total_tested = 0
+
+        for class_dir_name, limit in cohorts:
+            cdir = base_dir / class_dir_name
+            if not cdir.exists():
+                continue
+            images = sorted(cdir.glob("*.jpg"))[:limit]
+            for img_path in images:
+                total_tested += 1
+                res = self.classifier.inspect_image(img_path.read_bytes(), img_path.name)
+                if res.condition_code == "unsupported_nutrient_disorder":
+                    false_nutrient_rejections += 1
+
+        self.assertEqual(
+            false_nutrient_rejections,
+            0,
+            f"Encountered {false_nutrient_rejections} false nutrient disorder rejections across {total_tested} disease/healthy images.",
+        )
+
+
 
 class ImageInspectionHTTPTests(unittest.TestCase):
     def setUp(self):
