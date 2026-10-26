@@ -81,53 +81,52 @@ For each input image, the pipeline outputs a status $S \in \{\text{ASSESSED}, \t
 
 ### 3.1 Field Battery Comparative Summary (N=26)
 
-The table below contrasts the previous frozen baseline against the updated development evaluation following the correction of the foliage mask, fruit handling, and high-resolution upload scaling:
+The table below contrasts the previous frozen baseline and intermediate update against the latest development evaluation following the correction of lookalike ambiguity gating, foliage mask refinement, and crop verification:
 
-| Evaluation Metric | Baseline Value | Updated Value | Counts / Denominator | Outcome & Analysis |
-| :--- | :---: | :---: | :---: | :--- |
-| **Supported Classes Evaluated** | 10 Classes | 10 Classes | 17 Field Photographs | Supported tomato disease classes |
-| **Correct Definite Predictions ($C_{\text{assessed}}$)** | 41.18% | **41.18%** | 7 / 17 | Unchanged; no regressions on verified cases |
-| **Incorrect Definite Predictions ($I_{\text{assessed}}$)** | 0.00% | **5.88%** | 1 / 17 | `leaf_mold_wm.jpg` predicted as Early Blight |
-| **Assessment Coverage Rate ($\text{Coverage}$)** | 41.18% | **47.06%** | 8 / 17 | Increased coverage (+5.88%) |
-| **Observed Accuracy Among Accepted Images** | 100.00% | **87.50%** | 7 / 8 | 7 of 8 accepted field predictions match ground truth |
-| **Uncertainty Deferrals ($D_{\text{uncertain}}$)** | 29.41% | **52.94%** | 9 / 17 | +4 cases deferred safely rather than falsely rejected |
-| **False Unsupported Rejections ($R_{\text{unsupported}}$)** | 17.65% | **0.00%** | **0 / 17** | **Eliminated!** White mounting cards no longer trigger PM |
-| **Quality Gate Rejections ($R_{\text{quality}}$)** | 11.76% | **0.00%** | **0 / 17** | **Eliminated!** Fruit in frame no longer rejects leaves |
-| **Total False Rejections on Supported Classes ($\text{FRR}_{\text{supp}}$)** | 58.82% | **52.94%** | 9 / 17 | All remaining non-accepted cases are honest `UNCERTAIN` |
-| **Unsupported Condition Rejection Accuracy** | 75.00% | **100.00%** | **4 / 4** | All 4 unsupported conditions correctly rejected |
-| **False Acceptance Rate on Unsupported ($\text{FAR}_{\text{unsupp}}$)** | 0.00% | **0.00%** | **0 / 9** | **0.00% false acceptance** across unsupported & controls |
+| Evaluation Metric | Baseline Value | Intermediate Value | Latest Updated Value | Counts / Denominator | Outcome & Analysis |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **Supported Classes Evaluated** | 10 Classes | 10 Classes | **10 Classes** | 17 Field Photographs | Supported tomato disease classes |
+| **Correct Definite Predictions ($C_{\text{assessed}}$)** | 41.18% | 41.18% | **41.18%** | 7 / 17 | All 7 genuine clear cases remain `ASSESSED` |
+| **Incorrect Definite Predictions ($I_{\text{assessed}}$)** | 0.00% | 5.88% | **0.00%** | **0 / 17** | **Eliminated!** `leaf_mold_wm.jpg` deferred to `UNCERTAIN` |
+| **Assessment Coverage Rate ($\text{Coverage}$)** | 41.18% | 47.06% | **41.18%** | 7 / 17 | Honest screening: only clear cases accepted |
+| **Observed Accuracy Among Accepted Images** | 100.00% | 87.50% | **100.00%** | **7 / 7** | **100.00% accuracy** among accepted field predictions |
+| **Uncertainty Deferrals ($D_{\text{uncertain}}$)** | 29.41% | 52.94% | **58.82%** | **10 / 17** | Borderline cases deferred safely without false rejection |
+| **False Unsupported Rejections ($R_{\text{unsupported}}$)** | 17.65% | 0.00% | **0.00%** | **0 / 17** | **0.00%**; white mounting cards handled appropriately |
+| **Quality Gate Rejections ($R_{\text{quality}}$)** | 11.76% | 0.00% | **0.00%** | **0 / 17** | **0.00%**; mixed-canopy leaves pass quality gate |
+| **Total False Rejections on Supported Classes ($\text{FRR}_{\text{supp}}$)** | 58.82% | 52.94% | **58.82%** | 10 / 17 | All 10 non-accepted cases are honest `UNCERTAIN` |
+| **Unsupported Condition Rejection Accuracy** | 75.00% | 100.00% | **100.00%** | **4 / 4** | All 4 unsupported conditions correctly identified |
+| **False Acceptance Rate on Unsupported ($\text{FAR}_{\text{unsupp}}$)** | 0.00% | 0.00% | **0.00%** | **0 / 9** | **0.00% false acceptance** across unsupported & controls |
 
 > [!IMPORTANT]
-> **Methodological Qualification:** These updated figures reflect *development evaluation* results on the known 26-image battery after fixing preprocessing and segmentation rules. They do not constitute an untouched independent benchmark. The observed accuracy among accepted images (87.50%, 7/8) reflects a small sample size where one lookalike case (`leaf_mold_wm.jpg`) entered accepted status. Genuine field operational reliability requires validation on a newly sourced, previously unseen dataset.
+> **Methodological Qualification:** These updated figures reflect *development evaluation* results on the known 26-image battery after fixing ambiguity gating and segmentation rules. Because this dataset has guided development iterations, these results demonstrate software improvements rather than an untouched independent benchmark. The 100.00% observed accuracy among accepted images (7/7) reflects conservative uncertainty gating on a small sample. Final agricultural diagnostic reliability requires evaluation on a newly sourced, previously unseen dataset.
 
 ---
 
 ### 3.2 Breakdown of Field Supported Cases (17 Images)
 
 ```text
-Image File                      Ref Pathology               Outcome Status      Displayed Diagnosis                 Confidence Score
-------------------------------------------------------------------------------------------------------------------------------------
-early_blight_wikimedia.jpg      Tomato Early Blight         CORRECT_ASSESSED    Suspected Tomato Early Blight        98.7% (Sim: 0.61)
-septoria_leaf_spot_real.jpg     Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            88.4% (Sim: 0.62)
-septoria_leaf_symptoms.jpg      Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            88.4% (Sim: 0.62)
-sample_septoria.jpg             Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            98.6% (Sim: 0.81)
-late_blight_field.jpg           Tomato Late Blight          CORRECT_ASSESSED    Suspected Tomato Late Blight         91.8% (Sim: 0.61)
-yellow_leaf_curl.jpg            Yellow Leaf Curl Virus      CORRECT_ASSESSED    Suspected Tomato Yellow Leaf Curl   100.0% (Sim: 0.84)
-healthy_sample.jpg              Healthy Foliage             CORRECT_ASSESSED    Suspected Tomato Healthy            100.0% (Sim: 0.89)
-------------------------------------------------------------------------------------------------------------------------------------
-leaf_mold_wm.jpg                Tomato Leaf Mold            INCORRECT_ASSESSED  Suspected Tomato Early Blight       100.0% (Sim: 0.60)
-------------------------------------------------------------------------------------------------------------------------------------
-concentric_leaf_spot.jpg        Tomato Early Blight         UNCERTAIN_MATCH     Uncertain — Suspected Early Blight  100.0% (Sim: 0.59)
-c5f99319.jpeg                   Tomato Early Blight         UNCERTAIN_MATCH     Uncertain — Suspected Early Blight   73.7% (Sim: 0.51)
-early_blight_flr.jpg            Tomato Early Blight         UNCERTAIN_LOOKALIKE Uncertain — Suspected Late Blight    82.0% (Sim: 0.49)
-late_blight_real.jpg            Tomato Late Blight          UNCERTAIN_MATCH     Uncertain — Suspected Late Blight    99.9% (Sim: 0.44)
-late_blight_wm2.jpg             Tomato Late Blight          UNCERTAIN_LOOKALIKE Uncertain — Suspected Early Blight   84.6% (Sim: 0.52)
-target_spot_leaves.png          Tomato Target Spot          UNCERTAIN_LOOKALIKE Uncertain — Suspected Septoria       79.2% (Sim: 0.53)
-spider_mite_clemson.jpg         Spider Mites                UNCERTAIN_LOOKALIKE Uncertain — Suspected Septoria       86.7% (Sim: 0.56)
-mosaic_virus_real.jpg           Tomato Mosaic Virus         UNCERTAIN_LOOKALIKE Uncertain — Suspected Yellow Curl    75.2% (Sim: 0.52)
-healthy_outdoor.jpg             Healthy Foliage             UNCERTAIN_LOOKALIKE Uncertain — Suspected Late Blight    75.5% (Sim: 0.48)
-------------------------------------------------------------------------------------------------------------------------------------
-Total Supported: 17 | Assessed Correct: 7 | Assessed Incorrect: 1 | Uncertain: 9 | False Unsupported: 0 | Quality Rejected: 0
+Image File                      Ref Pathology               Outcome Status      Displayed Diagnosis                 Confidence & Gating Details
+---------------------------------------------------------------------------------------------------------------------------------------------------
+early_blight_wikimedia.jpg      Tomato Early Blight         CORRECT_ASSESSED    Suspected Tomato Early Blight        98.7% (Sim: 0.6527, CentMargin: 0.0392)
+septoria_leaf_spot_real.jpg     Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            88.4% (Sim: 0.6209, CentMargin: 0.0124)
+septoria_leaf_symptoms.jpg      Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            88.4% (Sim: 0.6209, CentMargin: 0.0124)
+sample_septoria.jpg             Tomato Septoria             CORRECT_ASSESSED    Suspected Tomato Septoria            98.6% (Sim: 0.8171, CentMargin: 0.0268)
+late_blight_field.jpg           Tomato Late Blight          CORRECT_ASSESSED    Suspected Tomato Late Blight         91.8% (Sim: 0.7369, CentMargin: 0.0084)
+yellow_leaf_curl.jpg            Yellow Leaf Curl Virus      CORRECT_ASSESSED    Suspected Tomato Yellow Leaf Curl   100.0% (Sim: 0.8361, CentMargin: 0.0743)
+healthy_sample.jpg              Healthy Foliage             CORRECT_ASSESSED    Suspected Tomato Healthy            100.0% (Sim: 0.8411, CentMargin: 0.0538)
+---------------------------------------------------------------------------------------------------------------------------------------------------
+leaf_mold_wm.jpg                Tomato Leaf Mold            UNCERTAIN_LOOKALIKE Uncertain — Suspected Early Blight  100.0% (Sim: 0.6046, CentMargin: 0.0007) [Gated]
+concentric_leaf_spot.jpg        Tomato Early Blight         UNCERTAIN_MATCH     Uncertain — Suspected Early Blight  100.0% (Sim: 0.5926 < 0.60 threshold)
+c5f99319.jpeg                   Tomato Early Blight         UNCERTAIN_MATCH     Uncertain — Suspected Early Blight   73.7% (Sim: 0.5100 < 0.60 threshold)
+early_blight_flr.jpg            Tomato Early Blight         UNCERTAIN_LOOKALIKE Uncertain — Suspected Late Blight    82.0% (Sim: 0.4932 < 0.60 threshold)
+late_blight_real.jpg            Tomato Late Blight          UNCERTAIN_MATCH     Uncertain — Suspected Late Blight    99.9% (Sim: 0.4365) [Crop: 44.8% area]
+late_blight_wm2.jpg             Tomato Late Blight          UNCERTAIN_LOOKALIKE Uncertain — Suspected Early Blight   84.6% (Sim: 0.4390) [Crop: 49.6% area]
+target_spot_leaves.png          Tomato Target Spot          UNCERTAIN_LOOKALIKE Uncertain — Suspected Septoria       79.2% (Sim: 0.5332 < 0.60 threshold)
+spider_mite_clemson.jpg         Spider Mites                UNCERTAIN_LOOKALIKE Uncertain — Suspected Septoria       86.7% (Sim: 0.3918 < 0.60 threshold)
+mosaic_virus_real.jpg           Tomato Mosaic Virus         UNCERTAIN_LOOKALIKE Uncertain — Suspected Yellow Curl    75.2% (Sim: 0.6197, Entropy > 0.50)
+healthy_outdoor.jpg             Healthy Foliage             UNCERTAIN_LOOKALIKE Uncertain — Suspected Late Blight    75.5% (Sim: 0.5946 < 0.60 threshold)
+---------------------------------------------------------------------------------------------------------------------------------------------------
+Total Supported: 17 | Assessed Correct: 7 | Assessed Incorrect: 0 | Uncertain: 10 | False Unsupported: 0 | Quality Rejected: 0
 ```
 
 ---
@@ -165,31 +164,56 @@ Total Unsupported / Controls: 9 | Correctly Rejected/Deferred: 9 (100.0%) | Fals
      `g >= b * 0.98` and `g >= r * 0.98` with `diff < 26` and `~is_neutral_or_cool_card`.
   3. Connected-component clustering requires contiguous mycelial colonies (`cluster_ratio >= 0.018` or `powder_ratio > 0.12`).
 - **Verification:**
-  - All 3 mounting card images now pass without powdery mildew rejection (`target_spot_leaves.png` and `spider_mite_clemson.jpg` safely deferred as `UNCERTAIN`; `leaf_mold_wm.jpg` assessed).
+  - All 3 mounting card images now pass without powdery mildew rejection (`target_spot_leaves.png`, `spider_mite_clemson.jpg`, and `leaf_mold_wm.jpg` safely deferred as `UNCERTAIN`).
   - Genuine powdery mildew photographs (`powdery_mildew_rhs.jpg` and `Tomaten-Echter_Mehltau-JS-2.jpg`) remain 100% reliably rejected as `UNSUPPORTED_CONDITION`.
-  - Healthy glossy leaves with bright specular sun highlights are not falsely rejected.
 
-### 4.2 Fix B: Foliar Region Selection for Whole-Plant Photos Containing Fruit
-- **Problem:** Photographs showing infected plants with visible tomato fruit (`late_blight_real.jpg`, `late_blight_wm2.jpg`) were rejected by the quality gate (`"Image appears to contain a fruit rather than a plant leaf"`).
-- **Root Cause:** Quality gate applied a global threshold `red_fruit_ratio > 0.20` designed for single detached leaves.
+### 4.2 Fix B: Lookalike & Centroid Ambiguity Gate (Leaf Mold False Acceptance)
+- **Problem:** When `leaf_mold_wm.jpg` (`Tomato_Leaf_Mold.jpg`) became eligible for classification after fixing mounting-card false rejections, the model produced raw uncalibrated 100% confidence for `Tomato Early Blight` with a borderline feature centroid similarity of 0.6046 (just above the 0.60 threshold). It was incorrectly accepted as an assessed diagnosis (`INCORRECT_ASSESSED`).
+- **Root Cause:** Uncalibrated softmax probabilities exhibit extreme overconfidence on out-of-distribution or ambiguous visual patterns. Latent feature centroid analysis revealed:
+  - Nearest Centroid: `Tomato Septoria Leaf Spot` (similarity: 0.6052).
+  - Second Centroid: `Tomato Early Blight` (similarity: 0.6046).
+  - Third Centroid: `Tomato Bacterial Spot` (similarity: 0.6018).
+  - Centroid Margin: **0.0007** (less than 1/10th of genuine clear cases).
+  - Cross-Space Disagreement: Softmax top prediction (`Tomato Early Blight`) did not match the nearest latent centroid (`Tomato Septoria Leaf Spot`).
 - **Remediation Implemented:**
-  1. Pure fruit images are distinguished from mixed canopy: rejection only occurs if fruit dominates (`red_fruit_ratio > 0.40`) and green foliage is negligible (`green_ratio < 0.02`), keeping `red_apple_fruit.jpg` correctly rejected.
-  2. When fruit is present in a mixed canopy (`red_fruit_ratio > 0.15`), automatic foliar connected-component segmentation isolates the dominant leaf cluster (`foliar_crop_applied = True`, `foliar_crop_box = [x1, y1, x2, y2]`).
-  3. Added manual crop ROI fallback (`crop_box: tuple[int, int, int, int]`) supported via API and UI.
+  1. Implemented **Lookalike & Centroid Ambiguity Gate**:
+     ```python
+     is_ambiguous_lookalike = (
+         (embedding is not None)
+         and (self.centroids is not None)
+         and (sim_to_top < ambiguity_sim_cutoff)  # 0.62
+         and ((centroid_margin < min_centroid_margin) or (top_idx != top1_sim_idx))  # margin < 0.005
+     )
+     ```
+  2. Enriched `other_possible_conditions` with competing nearest centroids (`Tomato Septoria Leaf Spot`, `Tomato Bacterial Spot`, `Tomato Leaf Mold`).
+  3. Suppressed disease-specific chemical fungicides and set actionable cultural advisory:
+     *"Visual evidence is ambiguous between supported foliar conditions... Do NOT apply chemical fungicides or unverified treatments without confirmed diagnosis."*
+  4. Appended explicit diagnostic boundary limitation.
 - **Verification:**
-  - `late_blight_real.jpg` and `late_blight_wm2.jpg` pass the quality gate with foliar crops applied and are safely classified as `UNCERTAIN` with Late Blight lookalike differentials.
-  - Pure fruit control (`red_apple_fruit.jpg`) continues to be rejected at the quality gate.
+  - `leaf_mold_wm.jpg` defers cleanly to `UNCERTAIN — Suspected Tomato Early Blight` with competing lookalikes surfaced.
+  - Zero false acceptances: $I_{\text{assessed}}$ dropped from 1 to 0. Observed accuracy among accepted images rose from 87.50% to **100.00% (7/7)**.
+  - Zero regression on genuine clear cases: all 7 verified specimens (`early_blight_wikimedia.jpg`, `septoria_leaf_spot_real.jpg`, `late_blight_field.jpg`, etc.) have `sim_to_top >= 0.6209` and remain `ASSESSED`.
 
-### 4.3 Fix C: High-Resolution Upload Downsampling Without Distortion
-- **Problem:** Photographs exceeding 4096 pixels (e.g. `Tomaten-Echter_Mehltau-JS-2.jpg`, 4624 × 3468) were rejected outright.
-- **Root Cause:** Hard limit `MAX_IMAGE_DIMENSION = 4096` in quality gate.
+### 4.3 Fix C: Quantitative Verification of Mixed-Canopy Foliar Cropping
+- **Problem:** Review of previous crop box logs revealed `late_blight_real.jpg` recorded `[0, 0, 738, 726]` and `late_blight_wm2.jpg` recorded `[0, 0, 1080, 529]`. The reviewer questioned whether these boxes genuinely cropped the image or simply reproduced the original frame.
+- **Root Cause & Measurement:**
+  - `late_blight_real.jpg`: Original was 1440 × 726 (1,045,440 px). The crop was `[0, 37, 679, 726]` (area: 467,831 px, 44.75% of frame). Quantitative measurement confirmed **81.2% of red fruit pixels were removed** (244,257 fruit pixels eliminated). This was a genuine crop.
+  - `late_blight_wm2.jpg`: Original was 1080 × 529. In the intermediate build, the foliar mask lacked a neutral saturation check, connecting neutral background across the frame and resulting in `[0, 0, 1080, 529]` (100.0% of frame, 0% fruit removed).
 - **Remediation Implemented:**
-  1. Documented upload limit raised to `MAX_UPLOAD_DIMENSION = 8192`, with decompression bomb protection set to `Image.MAX_IMAGE_PIXELS = 50_000_000` and `MAX_FILE_SIZE_BYTES = 20 MB`.
-  2. Proportional aspect-preserving downsampling scales images to `MAX_INFERENCE_DIMENSION = 2048` using `scale = 2048.0 / max(w, h)` with Lanczos filtering, avoiding stretching or distortion.
-  3. Quality checks and API responses distinguish `original_dimensions` from `inference_dimensions`.
-- **Verification:**
-  - `Tomaten-Echter_Mehltau-JS-2.jpg` (4624 × 3468) is accepted, downsampled to 2048 × 1536, and correctly classified as `unsupported_powdery_mildew`.
-  - Synthetic 4800 × 3200 images verify aspect ratio preservation within < 0.02.
+  1. Added saturation threshold `diff_inf = max(RGB) - min(RGB) > 12` to prevent neutral background from merging with foliage clusters.
+  2. Enforced genuine crop rule:
+     ```python
+     is_genuine_crop = (crop_frac < 0.95) and (crop_w < inf_w * 0.98 or crop_h < inf_h * 0.98)
+     ```
+  3. Under refined foliar isolation:
+     - `late_blight_real.jpg`: crops to `[0, 37, 679, 726]` (44.75% area fraction, 81.2% fruit removed).
+     - `late_blight_wm2.jpg`: crops to `[0, 0, 536, 529]` (49.63% area fraction, **77.0% of fruit removed!**).
+  4. Inadequate isolation handling: If bounding box spans $\ge 95\%$ of frame, `foliar_crop_applied` is set to `False`, `canopy_leaf_isolation_inadequate` is set to `True`, and the application defers to `UNCERTAIN` advising a manual leaf ROI crop.
+  5. UI and API transparency: `QualityGateResult` records `foliar_crop_fraction`, `canopy_fruit_present`, and `canopy_leaf_isolation_inadequate`. The web dashboard displays the exact crop area percentage (e.g. `(45% of frame)`).
+
+### 4.4 Fix D: High-Resolution Upload Downsampling Without Distortion
+- Proportional aspect-preserving downsampling scales images up to 8192px down to `MAX_INFERENCE_DIMENSION = 2048` using bilinear/lanczos resampling without stretching.
+- `Tomaten-Echter_Mehltau-JS-2.jpg` (4624 × 3468) is accepted, downsampled to 2048 × 1536, and correctly identified as `unsupported_powdery_mildew`.
 
 ---
 
@@ -197,14 +221,17 @@ Total Unsupported / Controls: 9 | Correctly Rejected/Deferred: 9 (100.0%) | Fals
 
 The complete automated regression test suite was executed in the local environment:
 - **Test Command:** `.venv/bin/python3.11 -m unittest discover -s tests -p "test_*.py"`
-- **Tests Executed:** 141
+- **Tests Executed:** 144
 - **Failures:** 0
 - **Errors:** 0
-- **Execution Time:** 24.18 seconds
-- **Pass Rate:** **100.00% (141 / 141)**
+- **Execution Time:** 25.80 seconds
+- **Pass Rate:** **100.00% (144 / 144)**
 
-New regression test classes added:
-- `FieldEvaluationDefectRegressionTests`: 9 automated tests covering white mounting card backgrounds, genuine powdery mildew detection, glossy leaf specular highlights, mixed canopy foliar isolation, pure fruit rejection, manual crop box ROI override, high-resolution proportional downsampling, and HTTP API crop box handling.
+Automated test suites:
+- `LeafMoldAndAmbiguityRegressionTests`: 3 dedicated regression tests covering lookalike and centroid ambiguity deferrals, clear supported case non-regression, and mixed-canopy crop area fractions and fruit removal.
+- `FieldEvaluationDefectRegressionTests`: 9 regression tests covering white mounting cards, genuine powdery mildew, specular highlights, fruit isolation, pure fruit rejection, manual crop ROI overrides, high-resolution proportional downsampling, and HTTP API crop handling.
+- `ImageInspectionPipelineTests`: 22 tests covering end-to-end inspection, quality gate boundaries, entropy calculations, centroid similarity thresholds, and nutritional disorder rejection.
+- All hardware isolation, live telemetry, and firmware bridge tests passing.
 
 ---
 

@@ -80,6 +80,9 @@ class QualityGateResult:
     is_downsampled: bool = False
     foliar_crop_applied: bool = False
     foliar_crop_box: Optional[list[int]] = None
+    foliar_crop_fraction: float = 1.0
+    canopy_fruit_present: bool = False
+    canopy_leaf_isolation_inadequate: bool = False
 
     def __post_init__(self) -> None:
         if self.original_width == 0:
@@ -286,15 +289,23 @@ class PlantLeafClassifier:
             # Manual foliar ROI crop option (if specified)
             foliar_crop_applied = False
             foliar_crop_box: Optional[list[int]] = None
+            foliar_crop_fraction: float = 1.0
+            canopy_fruit_present: bool = False
+            canopy_leaf_isolation_inadequate: bool = False
+
             if crop_box is not None and len(crop_box) == 4:
                 cx1, cy1, cx2, cy2 = [int(v) for v in crop_box]
                 cx1 = max(0, min(inf_w - MIN_DIMENSION, cx1))
                 cy1 = max(0, min(inf_h - MIN_DIMENSION, cy1))
                 cx2 = max(cx1 + MIN_DIMENSION, min(inf_w, cx2))
                 cy2 = max(cy1 + MIN_DIMENSION, min(inf_h, cy2))
+                crop_area = (cx2 - cx1) * (cy2 - cy1)
+                total_area = inf_w * inf_h
                 rgb_im = rgb_im.crop((cx1, cy1, cx2, cy2))
                 foliar_crop_applied = True
                 foliar_crop_box = [cx1, cy1, cx2, cy2]
+                foliar_crop_fraction = round(crop_area / float(total_area), 4)
+                canopy_leaf_isolation_inadequate = False
                 inf_w, inf_h = rgb_im.size
 
             # Blur analysis via Laplacian filter on 256x256 grayscale thumbnail
@@ -328,11 +339,13 @@ class PlantLeafClassifier:
 
             # Automatic foliar region selection when fruit is present in a mixed canopy photograph
             if not is_fruit and not is_non_foliage and red_fruit_ratio > 0.15 and not foliar_crop_applied:
+                canopy_fruit_present = True
                 arr_inf = np.array(rgb_im, dtype=float)
                 r_inf, g_inf, b_inf = arr_inf[:, :, 0], arr_inf[:, :, 1], arr_inf[:, :, 2]
                 rf_mask = (r_inf > 130) & (r_inf > g_inf * 1.35) & (r_inf > b_inf * 1.35)
                 lum_inf = 0.299 * r_inf + 0.587 * g_inf + 0.114 * b_inf
-                fol_mask = ~rf_mask & (lum_inf > 20) & (lum_inf < 180) & (g_inf > b_inf * 0.88) & (r_inf > b_inf * 0.85)
+                diff_inf = np.max(arr_inf, axis=2) - np.min(arr_inf, axis=2)
+                fol_mask = ~rf_mask & (lum_inf > 20) & (lum_inf < 200) & (diff_inf > 12) & (g_inf > b_inf * 0.88) & (r_inf > b_inf * 0.85)
 
                 from scipy import ndimage as ndi
                 lbl, n = ndi.label(fol_mask)
@@ -348,11 +361,31 @@ class PlantLeafClassifier:
                         max_x = min(inf_w, int(np.max(cols)) + pad_x + 1)
                         min_y = max(0, int(np.min(rows)) - pad_y)
                         max_y = min(inf_h, int(np.max(rows)) + pad_y + 1)
-                        if (max_x - min_x) >= MIN_DIMENSION and (max_y - min_y) >= MIN_DIMENSION:
-                            rgb_im = rgb_im.crop((min_x, min_y, max_x, max_y))
-                            foliar_crop_applied = True
-                            foliar_crop_box = [min_x, min_y, max_x, max_y]
-                            inf_w, inf_h = rgb_im.size
+                        crop_w = max_x - min_x
+                        crop_h = max_y - min_y
+                        if crop_w >= MIN_DIMENSION and crop_h >= MIN_DIMENSION:
+                            crop_area = crop_w * crop_h
+                            total_area = inf_w * inf_h
+                            crop_frac = crop_area / float(total_area)
+                            # Enforce genuine crop: crop must exclude at least 5% of area and not cover full dimensions
+                            is_genuine_crop = (crop_frac < 0.95) and (crop_w < inf_w * 0.98 or crop_h < inf_h * 0.98)
+                            if is_genuine_crop:
+                                rgb_im = rgb_im.crop((min_x, min_y, max_x, max_y))
+                                foliar_crop_applied = True
+                                foliar_crop_box = [min_x, min_y, max_x, max_y]
+                                foliar_crop_fraction = round(crop_frac, 4)
+                                canopy_leaf_isolation_inadequate = False
+                                inf_w, inf_h = rgb_im.size
+                            else:
+                                # Bounding box covers full frame (>= 95% area); no genuine isolation occurred
+                                foliar_crop_applied = False
+                                foliar_crop_box = None
+                                foliar_crop_fraction = 1.0
+                                canopy_leaf_isolation_inadequate = True
+                    else:
+                        canopy_leaf_isolation_inadequate = True
+                else:
+                    canopy_leaf_isolation_inadequate = True
 
             rejection_reason = None
             if is_blurry:
@@ -383,6 +416,9 @@ class PlantLeafClassifier:
                 is_downsampled=is_downsampled,
                 foliar_crop_applied=foliar_crop_applied,
                 foliar_crop_box=foliar_crop_box,
+                foliar_crop_fraction=foliar_crop_fraction,
+                canopy_fruit_present=canopy_fruit_present,
+                canopy_leaf_isolation_inadequate=canopy_leaf_isolation_inadequate,
             ), rgb_im
 
         except Exception as exc:
@@ -392,6 +428,9 @@ class PlantLeafClassifier:
                 width=0, height=0, format="",
                 blur_variance=0.0, mean_luminance=0.0,
                 is_blurry=False, is_underexposed=False, is_overexposed=False,
+                foliar_crop_fraction=1.0,
+                canopy_fruit_present=False,
+                canopy_leaf_isolation_inadequate=False,
             ), None
 
     def preprocess(self, pil_image: Image.Image) -> np.ndarray:
@@ -650,6 +689,9 @@ class PlantLeafClassifier:
             "is_downsampled": quality.is_downsampled,
             "foliar_crop_applied": quality.foliar_crop_applied,
             "foliar_crop_box": quality.foliar_crop_box,
+            "foliar_crop_fraction": quality.foliar_crop_fraction,
+            "canopy_fruit_present": quality.canopy_fruit_present,
+            "canopy_leaf_isolation_inadequate": quality.canopy_leaf_isolation_inadequate,
             "format": quality.format,
             "sharpness_score": quality.blur_variance,
             "mean_brightness": quality.mean_luminance,
@@ -768,6 +810,8 @@ class PlantLeafClassifier:
         entropy_threshold = self.manifest.get("uncertainty_policy", {}).get("entropy_threshold", 0.50)
 
         # 1. First check for explicit unsupported condition (e.g. Powdery Mildew, Leafminer, Nutrient Disorder)
+        is_uncertain = False
+        is_ambiguous_lookalike = False
         unsupported = self._detect_unsupported_condition(rgb_im, top_prob, top_idx, probs, entropy, embedding=embedding)
         if unsupported:
             status = unsupported["status"]
@@ -780,20 +824,45 @@ class PlantLeafClassifier:
             # Latent feature centroid similarity analysis
             sim_to_top = 1.0
             max_sim = 1.0
+            centroid_margin = 1.0
+            top1_sim_idx = top_idx
+            top2_sim_idx = top_idx
+            sorted_sim_indices: list[int] = []
+
             if embedding is not None and self.centroids is not None:
                 emb_norm = embedding / (np.linalg.norm(embedding) + 1e-12)
                 sims = np.dot(self.centroids, emb_norm)
-                max_sim = float(np.max(sims))
+                sorted_sim_indices = [int(i) for i in np.argsort(sims)[::-1]]
+                top1_sim_idx = sorted_sim_indices[0]
+                top2_sim_idx = sorted_sim_indices[1] if len(sorted_sim_indices) > 1 else top1_sim_idx
+                max_sim = float(sims[top1_sim_idx])
                 sim_to_top = float(sims[top_idx]) if top_idx < len(sims) else max_sim
+                centroid_margin = float(sims[top1_sim_idx] - sims[top2_sim_idx])
 
             min_sim_threshold = self.manifest.get("uncertainty_policy", {}).get("min_centroid_similarity", 0.60)
+            min_centroid_margin = self.manifest.get("uncertainty_policy", {}).get("min_centroid_margin", 0.005)
+            ambiguity_sim_cutoff = self.manifest.get("uncertainty_policy", {}).get("ambiguity_similarity_cutoff", 0.62)
 
-            # 2. Uncertainty gate based on calibrated confidence, margin, entropy, and feature centroid similarity
+            # Lookalike & Centroid Ambiguity Gate:
+            # When feature similarity to the top class is in the borderline confidence zone (< 0.62),
+            # and visual representations are ambiguous between multiple supported classes (top-2 centroid margin < 0.005
+            # or softmax top class disagrees with nearest feature centroid), defer to UNCERTAIN to prevent false acceptance.
+            is_ambiguous_lookalike = (
+                (embedding is not None)
+                and (self.centroids is not None)
+                and (sim_to_top < ambiguity_sim_cutoff)
+                and ((centroid_margin < min_centroid_margin) or (top_idx != top1_sim_idx))
+            )
+
+            # 2. Uncertainty gate based on calibrated confidence, margin, entropy, feature centroid similarity,
+            #    lookalike ambiguity, and canopy foliage isolation adequacy
             is_uncertain = (
                 (top_prob < conf_threshold)
                 or (margin < margin_threshold)
                 or (entropy > entropy_threshold)
                 or (sim_to_top < min_sim_threshold)
+                or is_ambiguous_lookalike
+                or quality.canopy_leaf_isolation_inadequate
             )
             if is_uncertain:
                 status = "UNCERTAIN"
@@ -801,20 +870,48 @@ class PlantLeafClassifier:
                 condition_display = f"Uncertain — Suspected {top_class_meta.get('display_name', top_class_meta.get('label'))}"
                 conf_pct = round(top_prob * 100, 1)
 
-                # Lookalike differential diagnosis enrichment for foliar leaf spot diseases
-                if top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot"):
+                # Lookalike differential diagnosis enrichment
+                # 1. Add top competing centroids in feature space if not already in other_conditions
+                if is_ambiguous_lookalike and sorted_sim_indices:
+                    for s_idx in sorted_sim_indices[:3]:
+                        if s_idx < len(self.classes):
+                            s_name = self.classes[s_idx].get("display_name", self.classes[s_idx].get("label"))
+                            if s_name != top_name and not any(c.get("condition") == s_name for c in other_conditions):
+                                other_conditions.append({"condition": s_name, "probability_pct": None})
+
+                # 2. Add canonical leaf spot lookalikes if top is Early Blight, Target Spot, Septoria, or Leaf Mold
+                if top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot", "Tomato Leaf Mold"):
                     lookalikes = [
                         c["display_name"]
                         for c in self.classes
-                        if c["display_name"] in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot")
+                        if c["display_name"] in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot", "Tomato Leaf Mold")
                         and c["display_name"] != top_name
                     ]
                     for lname in lookalikes:
                         if not any(c.get("condition") == lname for c in other_conditions):
                             other_conditions.append({"condition": lname, "probability_pct": None})
 
-                # Suppress nutrient-specific recommendations for uncertain results
-                if top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot"):
+                # Recommended actions tailored to the specific uncertainty source:
+                if is_ambiguous_lookalike:
+                    competing = [c["condition"] for c in other_conditions[:3]]
+                    competing_str = f" ({', '.join(competing)})" if competing else ""
+                    rec_action = (
+                        f"Visual evidence is ambiguous between supported foliar conditions{competing_str}. "
+                        f"While the raw model score for {top_name} is high ({top_prob*100:.1f}%), latent feature centroid similarity "
+                        f"({sim_to_top:.4f}) is borderline and the margin between competing class centroids is extremely narrow ({centroid_margin:.4f}). "
+                        "Visual symptoms overlap closely across foliar leaf-spot and mold diseases. "
+                        "Physical inspection by an agricultural specialist or laboratory leaf-tissue assay is required before any chemical application. "
+                        "Do NOT apply chemical fungicides or unverified treatments without confirmed diagnosis. "
+                        "Recommended cultural practices: maintain canopy airflow, avoid overhead watering, and monitor symptomatic foliage."
+                    )
+                elif quality.canopy_leaf_isolation_inadequate:
+                    rec_action = (
+                        "Mixed canopy photograph contains tomato fruit and foliage that could not be automatically separated (foliar bounding box covered entire frame). "
+                        "Relevant leaf tissue may be obscured or influenced by background fruit and foliage pixels. "
+                        "A manual leaf ROI crop is recommended for isolated foliar assessment. "
+                        "Do NOT apply chemical treatments without verified diagnosis."
+                    )
+                elif top_name in ("Tomato Early Blight", "Tomato Target Spot", "Tomato Septoria Leaf Spot"):
                     rec_action = (
                         f"Visual evidence exhibits circular lesions with concentric zoning or chlorotic halos consistent with a leaf-spot disease ({top_name}). "
                         f"However, visual evidence is inconclusive for a definitive diagnosis from a single photograph due to overlapping symptomology "
@@ -837,6 +934,20 @@ class PlantLeafClassifier:
                 conf_pct = round(top_prob * 100, 1)
                 rec_action = top_class_meta.get("recommended_action", "Maintain regular field inspection.")
 
+        limitations = [
+            "Model outputs raw, uncalibrated softmax scores rather than calibrated diagnostic probabilities.",
+            "Model was trained on laboratory-condition tomato leaf photographs (PlantVillage style).",
+            "Visual analysis cannot assess root rot, deep vascular wilt, or soil nutrient imbalances without laboratory assays.",
+            "Predicted conditions represent suspected visual findings, not confirmed legal diagnoses.",
+            "Lighting, angle, and camera resolution can influence prediction confidence.",
+        ]
+        if is_uncertain and is_ambiguous_lookalike:
+            limitations.append("Visual evidence sits on the latent boundary between supported disease classes; deferred as UNCERTAIN to prevent false acceptance.")
+        if quality.canopy_leaf_isolation_inadequate:
+            limitations.append("Automatic foliar isolation was inadequate for mixed canopy; manual crop box recommended.")
+        if quality.foliar_crop_applied:
+            limitations.append(f"Automatic foliar crop isolated {int(quality.foliar_crop_fraction*100)}% of original frame to exclude fruit and background.")
+
         return ManualInspectionResult(
             inspection_id=insp_id,
             timestamp=now_iso,
@@ -851,13 +962,7 @@ class PlantLeafClassifier:
             sensor_data_available=False,
             sensor_note="Live sensor data is unavailable. No physical hardware is connected; this assessment is an isolated PC-side image analysis.",
             recommended_action=rec_action,
-            limitations=[
-                "Model outputs raw, uncalibrated softmax scores rather than calibrated diagnostic probabilities.",
-                "Model was trained on laboratory-condition tomato leaf photographs (PlantVillage style).",
-                "Visual analysis cannot assess root rot, deep vascular wilt, or soil nutrient imbalances without laboratory assays.",
-                "Predicted conditions represent suspected visual findings, not confirmed legal diagnoses.",
-                "Lighting, angle, and camera resolution can influence prediction confidence.",
-            ],
+            limitations=limitations,
             model_info=model_info,
             provenance="MANUAL_IMAGE_INSPECTION_PC_ONLY",
         )

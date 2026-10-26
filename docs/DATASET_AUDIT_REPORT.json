@@ -1,0 +1,667 @@
+{
+  "timestamp_utc": "2026-10-25T12:12:38.911414+00:00",
+  "random_seed": 2026,
+  "total_files_inspected": 30610,
+  "total_usable_images": 30609,
+  "total_corrupted_or_non_image": 1,
+  "corrupted_files": [
+    {
+      "path": "/home/mano/Documents/Anveshion/dataset/augmented_dataset/Tomato__Tomato_YellowLeaf__Curl_Virus/svn-r6Yb5c",
+      "class": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+      "reason": "zero_byte_or_non_image"
+    }
+  ],
+  "formats_distribution": {
+    "JPEG": 30609
+  },
+  "dimensions_distribution": {
+    "256x256": 30609
+  },
+  "exact_duplicates_count": 14,
+  "exact_duplicate_files_count": 28,
+  "cross_class_duplicates_count": 0,
+  "total_distinct_specimen_groups": 30196,
+  "total_multi_variant_groups": 344,
+  "total_near_match_candidates_count": 7583,
+  "partition_proportions": {
+    "train": 0.6998,
+    "val": 0.15,
+    "test": 0.1502
+  },
+  "partition_sample_counts": {
+    "train": 21421,
+    "val": 4592,
+    "test": 4596
+  },
+  "leakage_verification": {
+    "train_val_group_overlap": 0,
+    "train_test_group_overlap": 0,
+    "val_test_group_overlap": 0,
+    "zero_leakage_guaranteed": true,
+    "isolation_scope": "Guarantees zero overlap among detected hash-defined and exact-duplicate groups across partitions.",
+    "specimen_level_independence_guaranteed": false,
+    "provenance_limitation": "Original source specimen IDs were stripped upstream. Detected hash groups successfully isolate exact and symmetrical variants, but cannot guarantee that all photographs of the same physical plant or leaf have been grouped together if they underwent distinct non-symmetrical transformations."
+  },
+  "class_breakdown": {
+    "Tomato_Bacterial_spot": {
+      "total_images": 3164,
+      "corrupt_count": 0,
+      "distinct_groups": 3108,
+      "multi_variant_groups": 49,
+      "near_match_candidate_pairs_count": 1388,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_100.jpg",
+          "file_b": "img_181.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_1308.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_213.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_2886.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_3021.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_531.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_918.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1001.jpg",
+          "file_b": "img_2526.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1003.jpg",
+          "file_b": "img_483.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1006.jpg",
+          "file_b": "img_1288.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 2214,
+      "val_samples": 472,
+      "test_samples": 478
+    },
+    "Tomato_Early_blight": {
+      "total_images": 2963,
+      "corrupt_count": 0,
+      "distinct_groups": 2952,
+      "multi_variant_groups": 11,
+      "near_match_candidate_pairs_count": 126,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_1158.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1000.jpg",
+          "file_b": "img_1932.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_102.jpg",
+          "file_b": "img_30.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1020.jpg",
+          "file_b": "img_786.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1030.jpg",
+          "file_b": "img_2517.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1072.jpg",
+          "file_b": "img_699.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1077.jpg",
+          "file_b": "img_1438.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1082.jpg",
+          "file_b": "img_1634.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1083.jpg",
+          "file_b": "img_1417.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1109.jpg",
+          "file_b": "img_1930.jpg",
+          "hamming_distance": 1
+        }
+      ],
+      "train_samples": 2071,
+      "val_samples": 446,
+      "test_samples": 446
+    },
+    "Tomato_Late_blight": {
+      "total_images": 3106,
+      "corrupt_count": 0,
+      "distinct_groups": 3083,
+      "multi_variant_groups": 23,
+      "near_match_candidate_pairs_count": 207,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1009.jpg",
+          "file_b": "img_84.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1011.jpg",
+          "file_b": "img_1786.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1023.jpg",
+          "file_b": "img_632.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1024.jpg",
+          "file_b": "img_1155.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1028.jpg",
+          "file_b": "img_2732.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1028.jpg",
+          "file_b": "img_483.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1042.jpg",
+          "file_b": "img_620.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1046.jpg",
+          "file_b": "img_2955.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1046.jpg",
+          "file_b": "img_687.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1048.jpg",
+          "file_b": "img_2020.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 2174,
+      "val_samples": 467,
+      "test_samples": 465
+    },
+    "Tomato_Leaf_Mold": {
+      "total_images": 2975,
+      "corrupt_count": 0,
+      "distinct_groups": 2956,
+      "multi_variant_groups": 18,
+      "near_match_candidate_pairs_count": 243,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1011.jpg",
+          "file_b": "img_1979.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1031.jpg",
+          "file_b": "img_1322.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1031.jpg",
+          "file_b": "img_2653.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1054.jpg",
+          "file_b": "img_1464.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_109.jpg",
+          "file_b": "img_1819.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_11.jpg",
+          "file_b": "img_1803.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1120.jpg",
+          "file_b": "img_1147.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1120.jpg",
+          "file_b": "img_2260.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1123.jpg",
+          "file_b": "img_1540.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1123.jpg",
+          "file_b": "img_2365.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 2083,
+      "val_samples": 444,
+      "test_samples": 448
+    },
+    "Tomato_Septoria_leaf_spot": {
+      "total_images": 3112,
+      "corrupt_count": 0,
+      "distinct_groups": 3101,
+      "multi_variant_groups": 11,
+      "near_match_candidate_pairs_count": 115,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1012.jpg",
+          "file_b": "img_1201.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1012.jpg",
+          "file_b": "img_25.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1012.jpg",
+          "file_b": "img_2916.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1015.jpg",
+          "file_b": "img_868.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1020.jpg",
+          "file_b": "img_359.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1020.jpg",
+          "file_b": "img_826.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1030.jpg",
+          "file_b": "img_309.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1041.jpg",
+          "file_b": "img_1675.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1041.jpg",
+          "file_b": "img_755.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1042.jpg",
+          "file_b": "img_398.jpg",
+          "hamming_distance": 1
+        }
+      ],
+      "train_samples": 2177,
+      "val_samples": 467,
+      "test_samples": 468
+    },
+    "Tomato_Spider_mites_Two_spotted_spider_mite": {
+      "total_images": 3104,
+      "corrupt_count": 0,
+      "distinct_groups": 3029,
+      "multi_variant_groups": 63,
+      "near_match_candidate_pairs_count": 1618,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_356.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_531.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_100.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_1116.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_1311.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_2464.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_2708.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_33.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_455.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_574.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 2173,
+      "val_samples": 462,
+      "test_samples": 469
+    },
+    "Tomato__Target_Spot": {
+      "total_images": 3064,
+      "corrupt_count": 0,
+      "distinct_groups": 3040,
+      "multi_variant_groups": 19,
+      "near_match_candidate_pairs_count": 376,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_2679.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_2826.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_2864.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_2890.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_326.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_732.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1002.jpg",
+          "file_b": "img_823.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1018.jpg",
+          "file_b": "img_2136.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1031.jpg",
+          "file_b": "img_315.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1041.jpg",
+          "file_b": "img_1461.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 2147,
+      "val_samples": 459,
+      "test_samples": 458
+    },
+    "Tomato__Tomato_YellowLeaf__Curl_Virus": {
+      "total_images": 3208,
+      "corrupt_count": 1,
+      "distinct_groups": 3178,
+      "multi_variant_groups": 27,
+      "near_match_candidate_pairs_count": 422,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_2344.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_291.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1005.jpg",
+          "file_b": "img_129.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1005.jpg",
+          "file_b": "img_791.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1008.jpg",
+          "file_b": "img_2895.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_1822.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1016.jpg",
+          "file_b": "img_3145.jpg",
+          "hamming_distance": 1
+        },
+        {
+          "file_a": "img_1019.jpg",
+          "file_b": "img_646.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1027.jpg",
+          "file_b": "img_141.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1027.jpg",
+          "file_b": "img_868.jpg",
+          "hamming_distance": 1
+        }
+      ],
+      "train_samples": 2247,
+      "val_samples": 480,
+      "test_samples": 481
+    },
+    "Tomato__Tomato_mosaic_virus": {
+      "total_images": 2841,
+      "corrupt_count": 0,
+      "distinct_groups": 2799,
+      "multi_variant_groups": 40,
+      "near_match_candidate_pairs_count": 428,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_1248.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_1439.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1.jpg",
+          "file_b": "img_543.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_1324.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1010.jpg",
+          "file_b": "img_1809.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1010.jpg",
+          "file_b": "img_2588.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1019.jpg",
+          "file_b": "img_1569.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1020.jpg",
+          "file_b": "img_2630.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1028.jpg",
+          "file_b": "img_1466.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1028.jpg",
+          "file_b": "img_2244.jpg",
+          "hamming_distance": 2
+        }
+      ],
+      "train_samples": 1989,
+      "val_samples": 426,
+      "test_samples": 426
+    },
+    "Tomato_healthy": {
+      "total_images": 3072,
+      "corrupt_count": 0,
+      "distinct_groups": 2950,
+      "multi_variant_groups": 83,
+      "near_match_candidate_pairs_count": 2660,
+      "sample_candidate_pairs": [
+        {
+          "file_a": "img_10.jpg",
+          "file_b": "img_858.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_1565.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_1671.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_2840.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_2864.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_2943.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_347.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_527.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_101.jpg",
+          "file_b": "img_773.jpg",
+          "hamming_distance": 2
+        },
+        {
+          "file_a": "img_1010.jpg",
+          "file_b": "img_1047.jpg",
+          "hamming_distance": 1
+        }
+      ],
+      "train_samples": 2146,
+      "val_samples": 469,
+      "test_samples": 457
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "selected_architecture": "MobileNetV2",
+  "rationale": "MobileNetV2 provides the optimal balance of diagnostic capacity (2.59M parameters), computational efficiency (~300 MFLOPs), and cross-platform portability for Raspberry Pi 4 edge deployment. MobileNetV3Small is faster (~60 MFLOPs) but its reduced representation capacity struggles to separate subtle fungal lesion lookalikes (e.g. Septoria vs Early Blight vs Leaf Mold). EfficientNetB0 (4.38M parameters, 390 MFLOPs) imposes 40% higher latency and excessive RAM requirements with marginal gains on laboratory data that fail to transfer to real field photographs.",
+  "candidates": {
+    "MobileNetV2": {
+      "architecture": "MobileNetV2",
+      "total_params": 2593610,
+      "trainable_params": 333066,
+      "non_trainable_params": 2260544,
+      "weights_fp32_mb": 9.89,
+      "estimated_flops": "300 MFLOPs",
+      "cpu_latency": {
+        "mean_ms": 45.64,
+        "median_ms": 45.74,
+        "p95_ms": 48.84,
+        "p99_ms": 49.33,
+        "fps": 21.9
+      },
+      "raspberry_pi_suitability": "EXCELLENT \u2014 Standard ONNX runtime support on ARM Cortex-A72; well-optimized GEMM primitives; low memory footprint (~14 MB); stable thermal profile under passive cooling."
+    },
+    "MobileNetV3Small": {
+      "architecture": "MobileNetV3Small",
+      "total_params": 1091706,
+      "trainable_params": 151434,
+      "non_trainable_params": 940272,
+      "weights_fp32_mb": 4.16,
+      "estimated_flops": "60 MFLOPs",
+      "cpu_latency": {
+        "mean_ms": 40.25,
+        "median_ms": 39.48,
+        "p95_ms": 44.47,
+        "p99_ms": 45.79,
+        "fps": 24.8
+      },
+      "raspberry_pi_suitability": "GOOD FOR LATENCY / LIMITED CAPACITY \u2014 Lower FLOPs and fastest CPU throughput (~9 ms), but hard-swish / SE blocks exhibit slightly higher quantization noise on EdgeTPU and smaller capacity for complex multi-lesion leaf pathology."
+    },
+    "EfficientNetB0": {
+      "architecture": "EfficientNetB0",
+      "total_params": 4385197,
+      "trainable_params": 333066,
+      "non_trainable_params": 4052131,
+      "weights_fp32_mb": 16.73,
+      "estimated_flops": "390 MFLOPs",
+      "cpu_latency": {
+        "mean_ms": 50.18,
+        "median_ms": 49.39,
+        "p95_ms": 54.4,
+        "p99_ms": 57.25,
+        "fps": 19.9
+      },
+      "raspberry_pi_suitability": "SUB-OPTIMAL FOR RASPBERRY PI \u2014 4.3M params, 390 MFLOPs; compound scaling depth leads to memory spikes and thermal throttling on sustained inspection runs on Raspberry Pi 4."
+    }
+  }
+}

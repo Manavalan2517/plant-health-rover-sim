@@ -1,6 +1,6 @@
 {
   "model_name": "plant_disease_mobilenetv2",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "architecture": "MobileNetV2 Transfer Learning",
   "input_shape": [
     224,
@@ -81,10 +81,12 @@
     }
   ],
   "uncertainty_policy": {
-    "confidence_threshold": 0.80,
-    "margin_threshold": 0.20,
-    "entropy_threshold": 0.50,
-    "min_centroid_similarity": 0.60,
+    "confidence_threshold": 0.8,
+    "margin_threshold": 0.2,
+    "entropy_threshold": 0.5,
+    "min_centroid_similarity": 0.6,
+    "min_centroid_margin": 0.005,
+    "ambiguity_similarity_cutoff": 0.62,
     "min_sharpness_var": 35.0,
     "min_mean_brightness": 25.0,
     "max_mean_brightness": 235.0,

@@ -65,3 +65,29 @@ An automated audit across every file in `augmented_dataset.zip` established the 
 - **Vascular / root pathologies**: Visual leaf analysis cannot diagnose root rot, bacterial wilt, or subterranean nematodes before foliar chlorosis appears.
 - **Nutrient deficiencies and non-modeled pests**: Visual symptoms of magnesium deficiency (`pub0006537_76781.webp`) and leafminer tunneling (`leaf_miner_pest.jpg`) are outside the 10 trained classes and cause closed-set overconfidence failures unless detected as out-of-distribution.
 - **Microclimate context**: An image alone cannot measure whether atmospheric humidity is above 85% (promoting leaf mold) or if soil moisture is depleting (drought stress). This is why the rover's multi-modal hardware architecture remains essential when physical sensors are connected.
+
+---
+
+## 4. Multi-Symmetry Hash Clustering and Leakage-Free Manifest (`DATASET_MANIFEST.json`)
+
+To resolve the lexicographical chunking flaw and eliminate cross-partition variant leakage, the dataset was audited using 64-bit multi-symmetry perceptual hashing (8 planar symmetries) and SHA-256 collision mapping (`plant_rover/ml/dataset_audit.py`):
+
+1. **Clustering Results:**
+   - **Total Usable Images:** 30,609 across 10 classes
+   - **Corrupted / Non-Image:** 1 (`svn-r6Yb5c`, 0 bytes)
+   - **Exact Duplicate Groups:** 14 (28 files)
+   - **Total Distinct Specimen Groups:** 30,196
+   - **Multi-Variant Groups:** 344 clusters (containing up to 11 synthetic affine/flip variants)
+   - **Near-Match Candidate Review Pairs:** Perceptual hash Hamming distance $\le 2$ candidate pairs are logged in `DATASET_AUDIT_REPORT.json` for manual agricultural review rather than collapsed automatically, preventing false-positive merging of distinct leaves.
+
+2. **Group-Level Partitioning (`DATASET_MANIFEST.json`):**
+   - **Train Split:** 21,421 images (69.98% of dataset, 21,137 groups)
+   - **Validation Split:** 4,592 images (15.00% of dataset, 4,529 groups)
+   - **Held-Out Test Split:** 4,596 images (15.02% of dataset, 4,530 groups)
+   - **Group Leakage:** 0 groups cross split boundaries ($\text{Train} \cap \text{Val} = \emptyset$, $\text{Train} \cap \text{Test} = \emptyset$, $\text{Val} \cap \text{Test} = \emptyset$).
+
+3. **Isolation Scope & Verification Boundary:**
+   - **Guaranteed:** Zero overlap among detected hash-defined groups and exact duplicate files across train, validation, and test partitions.
+   - **Limitation:** Specimen-level biological independence cannot be proven from filenames or hash metrics alone because upstream preprocessing stripped physical plant tags and EXIF data. Real-world diagnostic reliability must be verified using genuinely independent field photographs.
+
+

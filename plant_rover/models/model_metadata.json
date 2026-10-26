@@ -1,208 +1,212 @@
 {
-  "model_version": "1.0.0",
-  "timestamp_utc": "2026-10-22T18:38:09.784359+00:00",
+  "model_version": "2.0.0",
+  "timestamp_utc": "2026-10-25T12:19:48.954882+00:00",
   "random_seed": 2026,
-  "training_samples": 2400,
-  "validation_samples": 500,
-  "test_samples": 600,
-  "test_accuracy": 0.8333,
-  "macro_f1": 0.8334,
-  "weighted_f1": 0.8334,
+  "training_samples": 3500,
+  "validation_samples": 750,
+  "test_samples": 750,
+  "total_evaluated_samples": 750,
+  "correct_samples": 643,
+  "test_accuracy": 0.8573,
+  "macro_precision": 0.8634,
+  "macro_recall": 0.8573,
+  "macro_f1": 0.8567,
+  "weighted_f1": 0.8567,
   "classification_report": {
     "Tomato Bacterial Spot": {
-      "precision": 0.9107142857142857,
-      "recall": 0.85,
-      "f1-score": 0.8793103448275862,
-      "support": 60.0
+      "precision": 0.8375,
+      "recall": 0.8933,
+      "f1-score": 0.8645,
+      "support": 75
     },
     "Tomato Early Blight": {
-      "precision": 0.7818181818181819,
-      "recall": 0.7166666666666667,
-      "f1-score": 0.7478260869565218,
-      "support": 60.0
+      "precision": 0.8852,
+      "recall": 0.72,
+      "f1-score": 0.7941,
+      "support": 75
     },
     "Tomato Late Blight": {
-      "precision": 0.8846153846153846,
-      "recall": 0.7666666666666667,
-      "f1-score": 0.8214285714285714,
-      "support": 60.0
+      "precision": 0.8841,
+      "recall": 0.8133,
+      "f1-score": 0.8472,
+      "support": 75
     },
     "Tomato Leaf Mold": {
-      "precision": 0.7432432432432432,
-      "recall": 0.9166666666666666,
-      "f1-score": 0.8208955223880597,
-      "support": 60.0
+      "precision": 0.75,
+      "recall": 0.92,
+      "f1-score": 0.8263,
+      "support": 75
     },
     "Tomato Septoria Leaf Spot": {
-      "precision": 0.7924528301886793,
-      "recall": 0.7,
-      "f1-score": 0.7433628318584071,
-      "support": 60.0
+      "precision": 0.9138,
+      "recall": 0.7067,
+      "f1-score": 0.797,
+      "support": 75
     },
     "Tomato Two-Spotted Spider Mite": {
-      "precision": 0.7903225806451613,
-      "recall": 0.8166666666666667,
-      "f1-score": 0.8032786885245902,
-      "support": 60.0
+      "precision": 0.7952,
+      "recall": 0.88,
+      "f1-score": 0.8354,
+      "support": 75
     },
     "Tomato Target Spot": {
-      "precision": 0.6363636363636364,
-      "recall": 0.7,
-      "f1-score": 0.6666666666666666,
-      "support": 60.0
+      "precision": 0.775,
+      "recall": 0.8267,
+      "f1-score": 0.8,
+      "support": 75
     },
     "Tomato Yellow Leaf Curl Virus": {
-      "precision": 0.9833333333333333,
-      "recall": 0.9833333333333333,
-      "f1-score": 0.9833333333333333,
-      "support": 60.0
+      "precision": 0.96,
+      "recall": 0.96,
+      "f1-score": 0.96,
+      "support": 75
     },
     "Tomato Mosaic Virus": {
-      "precision": 0.9193548387096774,
-      "recall": 0.95,
-      "f1-score": 0.9344262295081968,
-      "support": 60.0
+      "precision": 0.875,
+      "recall": 0.9333,
+      "f1-score": 0.9032,
+      "support": 75
     },
     "Tomato Healthy": {
-      "precision": 0.9333333333333333,
-      "recall": 0.9333333333333333,
-      "f1-score": 0.9333333333333333,
-      "support": 60.0
+      "precision": 0.9583,
+      "recall": 0.92,
+      "f1-score": 0.9388,
+      "support": 75
     },
-    "accuracy": 0.8333333333333334,
+    "accuracy": 0.8573,
     "macro avg": {
-      "precision": 0.8375551647964915,
-      "recall": 0.8333333333333333,
-      "f1-score": 0.8333861608825266,
-      "support": 600.0
+      "precision": 0.8634,
+      "recall": 0.8573,
+      "f1-score": 0.8567,
+      "support": 750
     },
     "weighted avg": {
-      "precision": 0.8375551647964916,
-      "recall": 0.8333333333333334,
-      "f1-score": 0.8333861608825267,
-      "support": 600.0
+      "precision": 0.8634,
+      "recall": 0.8573,
+      "f1-score": 0.8567,
+      "support": 750
     }
   },
   "confusion_matrix": [
     [
-      51,
-      0,
+      67,
+      1,
+      1,
       2,
       1,
-      3,
-      0,
       2,
-      1,
       0,
+      0,
+      1,
       0
     ],
     [
-      1,
-      43,
       2,
+      54,
+      4,
       6,
-      3,
+      2,
       1,
       3,
-      0,
-      0,
+      1,
+      1,
       1
     ],
     [
       0,
+      3,
+      61,
+      7,
+      0,
+      0,
+      2,
+      0,
+      2,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      69,
+      1,
+      1,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      2,
+      2,
+      53,
+      3,
+      4,
+      1,
+      2,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      66,
       6,
-      46,
-      3,
-      1,
-      0,
-      3,
-      0,
-      1,
-      0
-    ],
-    [
-      0,
-      0,
-      1,
-      55,
-      0,
-      1,
-      1,
       0,
       2,
       0
     ],
     [
-      2,
-      4,
-      1,
-      5,
-      42,
-      2,
-      4,
-      0,
-      0,
-      0
-    ],
-    [
-      0,
-      0,
-      0,
-      3,
-      0,
-      49,
-      8,
-      0,
-      0,
-      0
-    ],
-    [
-      2,
-      2,
-      0,
-      1,
-      1,
-      8,
-      42,
-      0,
-      1,
-      3
-    ],
-    [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      59,
-      0,
-      0
-    ],
-    [
-      0,
-      0,
-      0,
-      0,
       3,
       0,
       0,
+      1,
       0,
-      57,
+      6,
+      62,
+      1,
+      1,
+      1
+    ],
+    [
+      2,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      72,
+      0,
       0
     ],
     [
       0,
       0,
       0,
-      0,
-      0,
+      2,
       1,
       2,
       0,
+      0,
+      70,
+      0
+    ],
+    [
+      0,
+      0,
       1,
-      56
+      1,
+      0,
+      2,
+      1,
+      0,
+      1,
+      69
     ]
   ],
   "class_names": [
@@ -217,73 +221,47 @@
     "Tomato__Tomato_mosaic_virus",
     "Tomato_healthy"
   ],
-  "confidence_calibration": {
-    "avg_confidence_correct": 0.948,
-    "avg_confidence_incorrect": 0.788,
-    "uncertain_rate_on_test": 0.075
-  },
-  "training_history": {
-    "loss": [
-      1.3998,
-      0.5928,
-      0.3932,
-      0.265,
-      0.2158,
-      0.1813,
-      0.1527,
-      0.1166,
-      0.1072,
-      0.0915,
-      0.0898,
-      0.0875
-    ],
-    "accuracy": [
-      0.5658,
-      0.8062,
-      0.8617,
-      0.9108,
-      0.9229,
-      0.9362,
-      0.945,
-      0.9608,
-      0.9642,
-      0.9737,
-      0.9646,
-      0.9683
-    ],
-    "val_loss": [
-      0.8772,
-      0.6187,
-      0.5738,
-      0.5441,
-      0.5515,
-      0.578,
-      0.5821,
-      0.6306,
-      0.6434,
-      0.642,
-      0.6379,
-      0.7117
-    ],
-    "val_accuracy": [
-      0.704,
-      0.78,
-      0.806,
-      0.816,
-      0.814,
-      0.812,
-      0.826,
-      0.826,
-      0.834,
-      0.838,
-      0.828,
-      0.834
+  "dynamic_augmentation": {
+    "applied_to_training": true,
+    "applied_to_val_and_test": false,
+    "operations": [
+      "Random horizontal flip (p=0.5)",
+      "Random mild rotation (+/- 12 deg)",
+      "Random mild brightness (factor 0.92 to 1.08)",
+      "Random mild contrast (factor 0.90 to 1.10)",
+      "Preserves diagnostic foliar symptoms and lesion margins"
     ]
+  },
+  "fine_tuning": {
+    "stratified_selection": true,
+    "all_classes_participating": true,
+    "unfrozen_layers": 25,
+    "batch_norm_frozen": true,
+    "learning_rate": 1e-05,
+    "optimizer": "Adam"
+  },
+  "keras_onnx_parity": {
+    "verified": true,
+    "max_probability_difference": 9.83e-06,
+    "min_embedding_cosine_similarity": 0.999995
+  },
+  "artifact_hashes": {
+    "keras_model_sha256": "b28250030679dd52c2f7349030df1c372d1473f2dc73dc9be8685c37a16d05ba",
+    "onnx_model_sha256": "d0a98ce1295567a12a9c56b752215d613ae9f6da48113531da375b9dca350f3a",
+    "class_centroids_sha256": "bbbcba23119393ee92ca24ccf0285f6bb4b9b672bb92ecb6de86b0c070aaf103",
+    "class_manifest_sha256": "fb992751fddeda1683fdedaf2de430f55ecbf7c1243e952bc16099cfd14e5555",
+    "dataset_manifest_sha256": "24c69efc98598ba461269665c662e25af54bc820a40960e809d72e8acd4ad6eb"
+  },
+  "confidence_calibration": {
+    "avg_confidence_correct": 0.9439,
+    "avg_confidence_incorrect": 0.7647,
+    "uncertain_rate_on_test": 0.1787
   },
   "limitations": [
     "Dataset consists of laboratory-style leaf photographs with controlled backgrounds (PlantVillage style).",
-    "Model accuracy may drop on real field photographs with complex weed backgrounds, harsh shadows, or direct sunlight.",
+    "Model accuracy drops on real field photographs with complex weed backgrounds, harsh shadows, or direct sunlight.",
     "Visual image diagnosis cannot replace chemical soil testing or lab PCR testing.",
-    "Uncertain status must prompt physical inspection and agronomist consultation."
+    "Uncertain status must prompt physical inspection and agronomist consultation.",
+    "Closed-set model cannot diagnose conditions outside the 10 trained classes without uncertainty/OOD rejection."
   ]
 }

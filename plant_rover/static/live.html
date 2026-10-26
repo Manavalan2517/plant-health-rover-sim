@@ -394,7 +394,13 @@ function renderInspectionResult(res){
 
   if (q.foliar_crop_applied) {
     $('gateCropNotice').style.display = 'block';
-    $('gateCropNotice').textContent = `🌾 Foliar leaf region isolated from mixed canopy [${q.foliar_crop_box ? q.foliar_crop_box.join(', ') : 'auto'}]`;
+    const fracText = q.foliar_crop_fraction != null ? ` (${Math.round(q.foliar_crop_fraction * 100)}% of frame)` : '';
+    $('gateCropNotice').textContent = `🌾 Foliar leaf region isolated from mixed canopy [${q.foliar_crop_box ? q.foliar_crop_box.join(', ') : 'auto'}]${fracText}`;
+    $('gateCropNotice').style.color = '#78df92';
+  } else if (q.canopy_leaf_isolation_inadequate) {
+    $('gateCropNotice').style.display = 'block';
+    $('gateCropNotice').textContent = `⚠️ Mixed canopy detected: Automatic foliar isolation inadequate (fruit/foliage unseparated). Manual ROI crop recommended.`;
+    $('gateCropNotice').style.color = 'var(--amber)';
   } else {
     $('gateCropNotice').style.display = 'none';
   }
